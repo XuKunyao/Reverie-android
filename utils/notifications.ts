@@ -11,8 +11,11 @@
  * - 使用自然元素 emoji（🌿💧🍃），不使用机械感符号
  */
 
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
+import type * as ExpoNotifications from 'expo-notifications';
+
+type NotificationsModule = typeof ExpoNotifications;
 
 /** 温暖的提醒文案集合 */
 const REMINDER_MESSAGES = [
@@ -23,25 +26,44 @@ const REMINDER_MESSAGES = [
   { title: '温馨提醒', body: '今天的水喝够了吗？来一杯吧 🌸' },
 ];
 
+function isExpoGo(): boolean {
+  return Constants.appOwnership === 'expo' || Constants.executionEnvironment === 'storeClient';
+}
+
+async function getNotifications(): Promise<NotificationsModule | null> {
+  if (isExpoGo()) {
+    return null;
+  }
+
+  return import('expo-notifications');
+}
+
 /**
  * 配置通知的显示行为
  * 即使 App 在前台也会显示通知
  */
 export function configureNotifications(): void {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: false,   // 不播放声音，保持安静
-      shouldSetBadge: false,
-    }),
+  getNotifications().then((Notifications) => {
+    Notifications?.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: false,   // 不播放声音，保持安静
+        shouldSetBadge: false,
+      }),
+    });
   });
 }
 
 /** 为 Android 创建通知频道，保证本地提醒能稳定显示 */
 export async function ensureNotificationChannel(): Promise<void> {
   if (Platform.OS !== 'android') {
+    return;
+  }
+
+  const Notifications = await getNotifications();
+  if (!Notifications) {
     return;
   }
 
@@ -58,6 +80,11 @@ export async function ensureNotificationChannel(): Promise<void> {
  * 在安卓 13+ 上需要用户手动授权
  */
 export async function requestPermissions(): Promise<boolean> {
+  const Notifications = await getNotifications();
+  if (!Notifications) {
+    return false;
+  }
+
   const { status } = await Notifications.requestPermissionsAsync();
   return status === 'granted';
 }
@@ -67,6 +94,11 @@ export async function requestPermissions(): Promise<boolean> {
  * @param intervalMinutes 提醒间隔（分钟）
  */
 export async function scheduleWaterReminder(intervalMinutes: number): Promise<void> {
+  const Notifications = await getNotifications();
+  if (!Notifications) {
+    return;
+  }
+
   // 先取消所有已有的提醒，避免重复
   await cancelAllReminders();
 
@@ -90,5 +122,10 @@ export async function scheduleWaterReminder(intervalMinutes: number): Promise<vo
 
 /** 取消所有已安排的提醒 */
 export async function cancelAllReminders(): Promise<void> {
+  const Notifications = await getNotifications();
+  if (!Notifications) {
+    return;
+  }
+
   await Notifications.cancelAllScheduledNotificationsAsync();
 }
