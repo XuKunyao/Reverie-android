@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   customInputShell: {
-    width: 100,
+    width: 90,
     minHeight: 42,
     backgroundColor: Theme.colors.background,
     borderRadius: Theme.radius.input,
