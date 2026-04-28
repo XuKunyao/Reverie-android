@@ -1,9 +1,9 @@
 # Reverie
 
-![Expo SDK](https://img.shields.io/badge/Expo-SDK%2054-D97757?style=flat-square&logo=expo&logoColor=white)
-![React Native](https://img.shields.io/badge/React%20Native-0.81-D97757?style=flat-square&logo=react&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.9-D97757?style=flat-square&logo=typescript&logoColor=white)
-![Platform](https://img.shields.io/badge/Platform-Android-D97757?style=flat-square&logo=android&logoColor=white)
+![Expo SDK](https://img.shields.io/badge/Expo-SDK%2054-8B7CF6?style=flat-square&logo=expo&logoColor=white)
+![React Native](https://img.shields.io/badge/React%20Native-0.81-61DAFB?style=flat-square&logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Android](https://img.shields.io/badge/Android-Target-3DDC84?style=flat-square&logo=android&logoColor=white)
 ![Status](https://img.shields.io/badge/Status-MVP%20in%20progress-D97757?style=flat-square)
 
 Reverie 是一个温暖、安静、克制的喝水提醒应用。它的目标不是制造更多打扰，而是在合适的时间轻轻提醒你补充水分，并用清晰的记录帮助你了解今天的饮水状态。
