@@ -52,6 +52,8 @@ const INTERVALS = [
 const DAILY_GOALS = [1000, 1500, 2000, 2500, 3000, 3500, 4000];
 
 type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'high';
+type SexProfile = 'unspecified' | 'female' | 'male';
+type DietProfile = 'hydrating' | 'balanced' | 'salty';
 
 const ACTIVITY_LEVELS: {
   value: ActivityLevel;
@@ -87,6 +89,42 @@ const ACTIVITY_LEVELS: {
     subtitle: '高强度运动',
     icon: 'zap',
     extraMl: 800,
+  },
+];
+
+const SEX_PROFILES: {
+  value: SexProfile;
+  label: string;
+  beverageAnchorMl: number;
+}[] = [
+  { value: 'unspecified', label: '未指定', beverageAnchorMl: 2600 },
+  { value: 'female', label: '女性', beverageAnchorMl: 2200 },
+  { value: 'male', label: '男性', beverageAnchorMl: 3000 },
+];
+
+const DIET_PROFILES: {
+  value: DietProfile;
+  title: string;
+  subtitle: string;
+  adjustmentMl: number;
+}[] = [
+  {
+    value: 'hydrating',
+    title: '清淡多蔬果',
+    subtitle: '食物含水较多',
+    adjustmentMl: -150,
+  },
+  {
+    value: 'balanced',
+    title: '均衡日常',
+    subtitle: '正常三餐',
+    adjustmentMl: 0,
+  },
+  {
+    value: 'salty',
+    title: '偏咸外卖多',
+    subtitle: '盐分摄入较高',
+    adjustmentMl: 250,
   },
 ];
 
@@ -143,24 +181,66 @@ function ActivityCard({
     >
       <Feather
         name={option.icon}
-        size={20}
+        size={18}
         color={selected ? Theme.colors.surface : Theme.colors.text}
       />
+      <View style={styles.activityCopy}>
+        <Text
+          style={[
+            styles.activityTitle,
+            selected && styles.activityTitleSelected,
+          ]}
+        >
+          {option.title}
+        </Text>
+        <Text
+          style={[
+            styles.activitySubtitle,
+            selected && styles.activitySubtitleSelected,
+          ]}
+        >
+          {option.subtitle}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function SmallOptionCard({
+  title,
+  subtitle,
+  selected,
+  onPress,
+}: {
+  title: string;
+  subtitle: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.smallOptionCard,
+        selected && styles.smallOptionCardSelected,
+        pressed && styles.activityCardPressed,
+      ]}
+    >
       <Text
         style={[
-          styles.activityTitle,
-          selected && styles.activityTitleSelected,
+          styles.smallOptionTitle,
+          selected && styles.smallOptionTitleSelected,
         ]}
       >
-        {option.title}
+        {title}
       </Text>
       <Text
         style={[
-          styles.activitySubtitle,
-          selected && styles.activitySubtitleSelected,
+          styles.smallOptionSubtitle,
+          selected && styles.smallOptionSubtitleSelected,
         ]}
       >
-        {option.subtitle}
+        {subtitle}
       </Text>
     </Pressable>
   );
@@ -196,6 +276,8 @@ export default function SettingsScreen() {
   const [isGoalModalVisible, setIsGoalModalVisible] = React.useState(false);
   const [weightKg, setWeightKg] = React.useState('60');
   const [activityLevel, setActivityLevel] = React.useState<ActivityLevel>('sedentary');
+  const [sexProfile, setSexProfile] = React.useState<SexProfile>('unspecified');
+  const [dietProfile, setDietProfile] = React.useState<DietProfile>('balanced');
 
   React.useEffect(() => {
     setCustomCupSize(String(settings.cupSize));
@@ -215,8 +297,21 @@ export default function SettingsScreen() {
   const parsedWeightKg = Number.parseFloat(weightKg);
   const isWeightValid = Number.isFinite(parsedWeightKg) && parsedWeightKg > 0;
   const selectedActivity = ACTIVITY_LEVELS.find((option) => option.value === activityLevel) ?? ACTIVITY_LEVELS[0];
+  const selectedSex = SEX_PROFILES.find((option) => option.value === sexProfile) ?? SEX_PROFILES[0];
+  const selectedDiet = DIET_PROFILES.find((option) => option.value === dietProfile) ?? DIET_PROFILES[1];
   const estimatedDailyGoal = isWeightValid
-    ? Math.round(((parsedWeightKg * 30) + selectedActivity.extraMl) / 50) * 50
+    ? Math.min(
+      4000,
+      Math.max(
+        1200,
+        Math.round((
+          (parsedWeightKg * 30 * 0.7) +
+          (selectedSex.beverageAnchorMl * 0.3) +
+          selectedActivity.extraMl +
+          selectedDiet.adjustmentMl
+        ) / 50) * 50,
+      ),
+    )
     : 0;
   const cupCountMin = estimatedDailyGoal > 0 ? Math.max(1, Math.floor(estimatedDailyGoal / 250)) : 0;
   const cupCountMax = estimatedDailyGoal > 0 ? Math.max(cupCountMin, Math.ceil(estimatedDailyGoal / 250)) : 0;
@@ -437,7 +532,7 @@ export default function SettingsScreen() {
 
                 <View style={styles.weightRow}>
                   <View style={styles.weightLabelGroup}>
-                    <Feather name="box" size={18} color={Theme.colors.textSecondary} />
+                    <Feather name="box" size={16} color={Theme.colors.textSecondary} />
                     <Text style={styles.weightLabel}>体重</Text>
                   </View>
                   <View style={styles.weightInputShell}>
@@ -456,8 +551,28 @@ export default function SettingsScreen() {
 
                 <View style={styles.profileDivider} />
 
+                <View style={styles.modalSectionHeader}>
+                  <Feather name="user" size={16} color={Theme.colors.textSecondary} />
+                  <Text style={styles.activityHeaderText}>性别参考</Text>
+                </View>
+                <View style={styles.sexGroup}>
+                  {SEX_PROFILES.map((option) => (
+                    <Chip
+                      key={option.value}
+                      label={option.label}
+                      selected={sexProfile === option.value}
+                      onPress={() => setSexProfile(option.value)}
+                    />
+                  ))}
+                </View>
+                <Text style={styles.fieldHint}>
+                  用作成年人饮品摄入参考；也可以保持未指定
+                </Text>
+
+                <View style={styles.profileDivider} />
+
                 <View style={styles.activityHeader}>
-                  <Feather name="activity" size={18} color={Theme.colors.textSecondary} />
+                  <Feather name="activity" size={16} color={Theme.colors.textSecondary} />
                   <Text style={styles.activityHeaderText}>每日活动量</Text>
                 </View>
                 <View style={styles.activityGrid}>
@@ -467,6 +582,22 @@ export default function SettingsScreen() {
                       option={option}
                       selected={activityLevel === option.value}
                       onPress={() => setActivityLevel(option.value)}
+                    />
+                  ))}
+                </View>
+
+                <View style={styles.modalSectionHeader}>
+                  <Feather name="coffee" size={16} color={Theme.colors.textSecondary} />
+                  <Text style={styles.activityHeaderText}>饮食习惯</Text>
+                </View>
+                <View style={styles.dietGrid}>
+                  {DIET_PROFILES.map((option) => (
+                    <SmallOptionCard
+                      key={option.value}
+                      title={option.title}
+                      subtitle={option.subtitle}
+                      selected={dietProfile === option.value}
+                      onPress={() => setDietProfile(option.value)}
                     />
                   ))}
                 </View>
@@ -715,10 +846,10 @@ const styles = StyleSheet.create({
   modalCard: {
     maxHeight: '88%',
     backgroundColor: Theme.colors.surface,
-    borderRadius: 24,
-    paddingHorizontal: 18,
-    paddingTop: 18,
-    paddingBottom: 18,
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 16,
     elevation: 4,
     shadowColor: '#1A1612',
     shadowOffset: { width: 0, height: 10 },
@@ -729,7 +860,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 12,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   modalHeaderCopy: {
     flex: 1,
@@ -737,19 +868,19 @@ const styles = StyleSheet.create({
   modalTitle: {
     color: Theme.colors.text,
     fontFamily: Theme.fonts.medium,
-    fontSize: 20,
-    lineHeight: 26,
+    fontSize: 19,
+    lineHeight: 25,
   },
   modalDescription: {
     color: Theme.colors.textSecondary,
     fontFamily: Theme.fonts.regular,
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 12,
+    lineHeight: 18,
     marginTop: 4,
   },
   closeButton: {
-    width: 40,
-    height: 40,
+    width: 38,
+    height: 38,
     borderRadius: Theme.radius.full,
     backgroundColor: '#F1ECE4',
     alignItems: 'center',
@@ -766,7 +897,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Theme.colors.border,
-    padding: 16,
+    padding: 12,
     elevation: 1,
     shadowColor: '#1A1612',
     shadowOffset: { width: 0, height: 1 },
@@ -776,9 +907,9 @@ const styles = StyleSheet.create({
   profileTitle: {
     color: Theme.colors.text,
     fontFamily: Theme.fonts.medium,
-    fontSize: 16,
-    lineHeight: 22,
-    marginBottom: 16,
+    fontSize: 15,
+    lineHeight: 20,
+    marginBottom: 12,
   },
   weightRow: {
     flexDirection: 'row',
@@ -789,77 +920,89 @@ const styles = StyleSheet.create({
   weightLabelGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
     flex: 1,
   },
   weightLabel: {
     color: Theme.colors.text,
     fontFamily: Theme.fonts.medium,
-    fontSize: 14,
+    fontSize: 13,
   },
   weightInputShell: {
-    width: 112,
-    minHeight: 46,
+    width: 104,
+    minHeight: 40,
     backgroundColor: Theme.colors.background,
     borderRadius: 13,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Theme.colors.border,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
   },
   weightInput: {
     flex: 1,
     color: Theme.colors.text,
     fontFamily: Theme.fonts.medium,
-    fontSize: 16,
-    paddingVertical: 8,
+    fontSize: 15,
+    paddingVertical: 6,
   },
   weightUnit: {
     color: Theme.colors.textSecondary,
     fontFamily: Theme.fonts.medium,
-    fontSize: 13,
+    fontSize: 12,
   },
   fieldHint: {
     color: Theme.colors.textSecondary,
     fontFamily: Theme.fonts.regular,
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: 10,
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 8,
   },
   profileDivider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: Theme.colors.border,
-    marginVertical: 16,
+    marginVertical: 12,
+  },
+  modalSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  sexGroup: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
   activityHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 12,
+    gap: 8,
+    marginBottom: 10,
   },
   activityHeaderText: {
     color: Theme.colors.text,
     fontFamily: Theme.fonts.medium,
-    fontSize: 14,
+    fontSize: 13,
   },
   activityGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   activityCard: {
     width: '48.5%',
-    minHeight: 88,
+    minHeight: 58,
     backgroundColor: Theme.colors.background,
-    borderRadius: 14,
+    borderRadius: 13,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Theme.colors.border,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 10,
+    justifyContent: 'flex-start',
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
   },
   activityCardSelected: {
     backgroundColor: Theme.colors.primary,
@@ -868,13 +1011,15 @@ const styles = StyleSheet.create({
   activityCardPressed: {
     opacity: 0.82,
   },
+  activityCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
   activityTitle: {
     color: Theme.colors.text,
     fontFamily: Theme.fonts.medium,
-    fontSize: 13,
-    lineHeight: 17,
-    textAlign: 'center',
-    marginTop: 8,
+    fontSize: 12,
+    lineHeight: 16,
   },
   activityTitleSelected: {
     color: Theme.colors.surface,
@@ -882,22 +1027,63 @@ const styles = StyleSheet.create({
   activitySubtitle: {
     color: Theme.colors.textSecondary,
     fontFamily: Theme.fonts.regular,
-    fontSize: 11,
-    lineHeight: 15,
-    textAlign: 'center',
+    fontSize: 10,
+    lineHeight: 14,
     marginTop: 3,
   },
   activitySubtitleSelected: {
     color: Theme.colors.surface,
   },
+  dietGrid: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  smallOptionCard: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 60,
+    backgroundColor: Theme.colors.background,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Theme.colors.border,
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+  },
+  smallOptionCardSelected: {
+    backgroundColor: Theme.colors.primary,
+    borderColor: Theme.colors.primary,
+  },
+  smallOptionTitle: {
+    color: Theme.colors.text,
+    fontFamily: Theme.fonts.medium,
+    fontSize: 11,
+    lineHeight: 15,
+    textAlign: 'center',
+  },
+  smallOptionTitleSelected: {
+    color: Theme.colors.surface,
+  },
+  smallOptionSubtitle: {
+    color: Theme.colors.textSecondary,
+    fontFamily: Theme.fonts.regular,
+    fontSize: 9,
+    lineHeight: 13,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  smallOptionSubtitleSelected: {
+    color: Theme.colors.surface,
+  },
   resultCard: {
-    minHeight: 128,
+    minHeight: 118,
     backgroundColor: '#FBF2E7',
     borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Theme.colors.border,
-    padding: 16,
-    marginBottom: 16,
+    padding: 14,
+    marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
     overflow: 'hidden',
