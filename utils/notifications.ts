@@ -1,0 +1,94 @@
+/**
+ * 通知调度工具 — 管理喝水提醒通知
+ *
+ * 为什么用 expo-notifications？
+ * - 它是 Expo 官方的通知库，支持本地定时通知
+ * - 替代原生 Android 的 WorkManager，但使用方式更简单
+ * - 支持在后台按间隔重复推送通知
+ *
+ * 通知文案设计原则：
+ * - 语气温暖平和，像朋友的轻声提醒
+ * - 使用自然元素 emoji（🌿💧🍃），不使用机械感符号
+ */
+
+import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
+
+/** 温暖的提醒文案集合 */
+const REMINDER_MESSAGES = [
+  { title: '该喝水啦', body: '照顾好自己，喝杯水吧 🌿' },
+  { title: '休息一下', body: '起来活动活动，顺便喝杯水 💧' },
+  { title: '补充水分', body: '记得喝水哦，保持好状态 🍃' },
+  { title: '喝水时间', body: '给自己一杯温水，放松一下 ☕' },
+  { title: '温馨提醒', body: '今天的水喝够了吗？来一杯吧 🌸' },
+];
+
+/**
+ * 配置通知的显示行为
+ * 即使 App 在前台也会显示通知
+ */
+export function configureNotifications(): void {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: false,   // 不播放声音，保持安静
+      shouldSetBadge: false,
+    }),
+  });
+}
+
+/** 为 Android 创建通知频道，保证本地提醒能稳定显示 */
+export async function ensureNotificationChannel(): Promise<void> {
+  if (Platform.OS !== 'android') {
+    return;
+  }
+
+  await Notifications.setNotificationChannelAsync('water-reminders', {
+    name: '喝水提醒',
+    importance: Notifications.AndroidImportance.DEFAULT,
+    vibrationPattern: [0, 250, 250, 250],
+    lightColor: '#D97757',
+  });
+}
+
+/**
+ * 请求通知权限
+ * 在安卓 13+ 上需要用户手动授权
+ */
+export async function requestPermissions(): Promise<boolean> {
+  const { status } = await Notifications.requestPermissionsAsync();
+  return status === 'granted';
+}
+
+/**
+ * 设定定时喝水提醒
+ * @param intervalMinutes 提醒间隔（分钟）
+ */
+export async function scheduleWaterReminder(intervalMinutes: number): Promise<void> {
+  // 先取消所有已有的提醒，避免重复
+  await cancelAllReminders();
+
+  // 随机选一条温暖的提醒文案
+  const message = REMINDER_MESSAGES[Math.floor(Math.random() * REMINDER_MESSAGES.length)];
+
+  // 设定重复通知
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: message.title,
+      body: message.body,
+      sound: false,
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: intervalMinutes * 60,
+      repeats: true,
+    },
+  });
+}
+
+/** 取消所有已安排的提醒 */
+export async function cancelAllReminders(): Promise<void> {
+  await Notifications.cancelAllScheduledNotificationsAsync();
+}

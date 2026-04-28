@@ -1,50 +1,70 @@
-# Welcome to your Expo app 👋
+# Reverie
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Reverie 是一个温暖、安静的喝水提醒应用。第一阶段目标很克制：记录今日饮水、显示圆形进度、设置每日目标/单次水量/提醒间隔，并通过本地通知提醒自己喝水。
 
-## Get started
+## 为什么这样搭建
 
-1. Install dependencies
+这个项目使用 Expo + React Native，而不是一开始就写原生 Android/Kotlin。
 
-   ```bash
-   npm install
-   ```
+原因很简单：
 
-2. Start the app
+1. 你是安卓开发新手，Expo 可以先避开复杂的 Gradle、Manifest、原生权限配置。
+2. 当前功能主要是界面、本地存储和本地通知，Expo 已经能覆盖第一阶段需求。
+3. 你提到的 Android WorkManager 更偏原生层。这个阶段我用 `expo-notifications` 做重复本地通知；后续如果你需要更强的后台可靠性，再迁移到开发构建或原生模块更合适。
 
-   ```bash
-   npx expo start
-   ```
+## 视觉原则
 
-In the output, you'll find options to open the app in a
+核心设计语言集中在 `constants/theme.ts`：
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- 背景：`#F5F0E8`
+- 卡片：`#FDFAF4`
+- 品牌色：`#D97757`
+- 文字：`#1A1612` / `#6B6560`
+- 边框：`#E8E2D9`
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+界面避免纯白、冷蓝、霓虹色和强阴影。图标使用细线风格，动效和布局都尽量克制。
 
-## Get a fresh project
+## 目录说明
 
-When you're ready, run:
+- `app/_layout.tsx`：应用入口，加载 DM Sans 字体、配置通知、挂载全局状态。
+- `app/(tabs)/index.tsx`：首页，展示问候语、今日进度、喝水按钮和记录列表。
+- `app/(tabs)/settings.tsx`：设置页，管理目标水量、单次饮水量、提醒间隔。
+- `contexts/WaterContext.tsx`：全局饮水状态。它负责新增记录、删除记录、更新设置。
+- `utils/storage.ts`：本地存储。今日饮水记录按日期保存，设置单独保存。
+- `utils/notifications.ts`：本地提醒通知。
+- `components/WaterProgress.tsx`：圆形饮水进度。
+- `components/GreetingHeader.tsx`：根据时间显示问候语。
+- `components/WaterLogItem.tsx`：单条饮水记录。
+
+## 如何运行
+
+先安装依赖：
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+启动开发服务器：
 
-## Learn more
+```bash
+npm run start
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+然后可以用 Expo Go 扫码，或在终端里按 `a` 打开安卓模拟器。
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+如果 PowerShell 提示 `npm.ps1 cannot be loaded`，可以改用：
 
-## Join the community
+```bash
+npm.cmd run start
+```
 
-Join our community of developers creating universal apps.
+## 开发检查
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+每次改完代码，可以运行：
+
+```bash
+npm.cmd run lint
+npx.cmd tsc --noEmit
+```
+
+`lint` 检查代码风格和常见错误；`tsc` 检查 TypeScript 类型是否安全。

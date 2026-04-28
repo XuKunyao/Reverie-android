@@ -1,98 +1,175 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+/**
+ * 首页 — 喝水追踪主界面
+ *
+ * 布局结构（从上到下）：
+ * 1. 问候语 — 根据时间显示温暖的问候
+ * 2. 圆形进度 — 大号弧形显示今日进度
+ * 3. "喝了一杯"按钮 — 核心操作
+ * 4. 今日记录列表 — 带时间戳的饮水记录
+ *
+ * 设计原则：
+ * - 界面元素越少越好，只保留核心内容
+ * - 大量留白，让内容有呼吸感
+ * - 按钮使用品牌珊瑚橙色，是页面唯一的强调色
+ */
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+  Alert,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
+import { Theme } from '@/constants/theme';
+import { useWater } from '@/contexts/WaterContext';
+import { WaterProgress } from '@/components/WaterProgress';
+import { WaterLogItem } from '@/components/WaterLogItem';
+import { GreetingHeader } from '@/components/GreetingHeader';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const insets = useSafeAreaInsets();
+  const { state, addWater, deleteLog } = useWater();
+  const { todayLogs, todayTotal, settings, isLoaded } = state;
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  /** 处理删除记录 — 先弹确认框 */
+  const handleDelete = (id: string) => {
+    Alert.alert(
+      '删除记录',
+      '确定要删除这条饮水记录吗？',
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '删除',
+          style: 'destructive',
+          onPress: () => deleteLog(id),
+        },
+      ]
+    );
+  };
+
+  // 数据加载中时显示空白（启动屏仍然可见）
+  if (!isLoaded) {
+    return <View style={[styles.container, { paddingTop: insets.top }]} />;
+  }
+
+  return (
+    <ScrollView
+      style={[styles.container, { paddingTop: insets.top }]}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* 问候语 */}
+      <GreetingHeader />
+
+      {/* 圆形进度指示器 */}
+      <View style={styles.progressSection}>
+        <WaterProgress current={todayTotal} goal={settings.dailyGoal} />
+      </View>
+
+      {/* 达标提示 */}
+      {todayTotal >= settings.dailyGoal && (
+        <Text style={styles.completedText}>
+          今日目标已达成，太棒了
+        </Text>
+      )}
+
+      {/* 喝了一杯按钮 */}
+      <Pressable
+        style={({ pressed }) => [
+          styles.addButton,
+          pressed && styles.addButtonPressed,
+        ]}
+        onPress={() => addWater()}
+      >
+        <Feather name="plus" size={19} color={Theme.colors.surface} />
+        <Text style={styles.addButtonText}>喝了一杯（{settings.cupSize}ml）</Text>
+      </Pressable>
+
+      {/* 今日记录 */}
+      {todayLogs.length > 0 && (
+        <View style={styles.logSection}>
+          <Text style={styles.logTitle}>今日记录</Text>
+          <View style={styles.logCard}>
+            {todayLogs.map((log) => (
+              <WaterLogItem
+                key={log.id}
+                amount={log.amount}
+                timestamp={log.timestamp}
+                onDelete={() => handleDelete(log.id)}
+              />
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* 底部留白 */}
+      <View style={{ height: 32 }} />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: Theme.colors.background,
   },
-  stepContainer: {
+  content: {
+    paddingHorizontal: 24,
+    paddingBottom: 20,
+  },
+  progressSection: {
+    alignItems: 'center',
+    marginTop: 32,
+    marginBottom: 24,
+  },
+  completedText: {
+    textAlign: 'center',
+    fontSize: 15,
+    fontFamily: Theme.fonts.medium,
+    color: Theme.colors.success,
+    marginBottom: 16,
+  },
+  addButton: {
+    flexDirection: 'row',
+    backgroundColor: Theme.colors.primary,
+    borderRadius: Theme.radius.button,
+    paddingVertical: 16,
     gap: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  addButtonPressed: {
+    backgroundColor: Theme.colors.primaryPressed,
+  },
+  addButtonText: {
+    color: Theme.colors.surface,
+    fontSize: 17,
+    fontFamily: Theme.fonts.medium,
+    letterSpacing: 0.3,
+  },
+  logSection: {
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  logTitle: {
+    fontSize: 16,
+    fontFamily: Theme.fonts.medium,
+    color: Theme.colors.textSecondary,
+    marginBottom: 12,
+  },
+  logCard: {
+    backgroundColor: Theme.colors.surface,
+    borderRadius: Theme.radius.card,
+    overflow: 'hidden',
+    // 极轻阴影 — 相当于 elevation 1dp
+    elevation: 1,
+    shadowColor: '#1A1612',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
   },
 });

@@ -1,53 +1,77 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Reverie 设计系统 — 温暖、安静、克制的喝水提醒体验
+ *
+ * 设计原则：
+ * - 温暖的奶油色调，禁止冷色调
+ * - 大量留白，让内容"呼吸"
+ * - 克制的动效，缓慢优雅
+ * - 整体气质像一本安静的学者笔记本
  */
 
-import { Platform } from 'react-native';
-
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
-
-export const Colors = {
-  light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+export const Theme = {
+  colors: {
+    /** 页面背景 — 温暖的奶油白，绝不使用纯白 */
+    background: '#F5F0E8',
+    /** 卡片/Surface 背景 — 比背景稍亮的暖白 */
+    surface: '#FDFAF4',
+    /** 品牌主色 — 温暖的珊瑚橙 */
+    primary: '#D97757',
+    /** 品牌色按下态 — 稍深的珊瑚色 */
+    primaryPressed: '#C4633E',
+    /** 主文字色 — 温暖的近黑色 */
+    text: '#1A1612',
+    /** 次要文字色 — 温暖的中性灰 */
+    textSecondary: '#6B6560',
+    /** 分割线/边框 — 极淡的暖色线条 */
+    border: '#E8E2D9',
+    /** 达标成功色 — 柔和的苔绿色 */
+    success: '#7A9A6D',
+    /** 进度条背景轨道色 */
+    trackBackground: '#EDE8DF',
   },
-  dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+  /** 圆角半径 */
+  radius: {
+    button: 14,
+    card: 16,
+    input: 12,
+    full: 9999,
+  },
+  /** 动画参数 — 克制、缓慢 */
+  animation: {
+    duration: 350,
+    easing: 'ease-in-out',
+  },
+  /** 间距系统 — 8px 基准 */
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 16,
+    lg: 24,
+    xl: 32,
+    xxl: 48,
+  },
+  /** 字体配置 */
+  fonts: {
+    regular: 'DMSans_400Regular',
+    medium: 'DMSans_500Medium',
   },
 };
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
+export const Colors = {
+  light: {
+    text: Theme.colors.text,
+    background: Theme.colors.background,
+    tint: Theme.colors.primary,
+    icon: Theme.colors.textSecondary,
+    tabIconDefault: Theme.colors.textSecondary,
+    tabIconSelected: Theme.colors.primary,
   },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
+  dark: {
+    text: Theme.colors.text,
+    background: Theme.colors.background,
+    tint: Theme.colors.primary,
+    icon: Theme.colors.textSecondary,
+    tabIconDefault: Theme.colors.textSecondary,
+    tabIconSelected: Theme.colors.primary,
   },
-  web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-  },
-});
+};
