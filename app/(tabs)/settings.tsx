@@ -50,6 +50,7 @@ const INTERVALS = [
 
 /** 可选的每日目标 */
 const DAILY_GOALS = [1000, 1500, 2000, 2500, 3000, 3500, 4000];
+const BASE_WEIGHT_SLOPE = 12;
 
 type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'high';
 type SexProfile = 'unspecified' | 'female' | 'male';
@@ -300,8 +301,12 @@ export default function SettingsScreen() {
   const selectedActivity = ACTIVITY_LEVELS.find((option) => option.value === activityLevel) ?? ACTIVITY_LEVELS[0];
   const selectedSex = SEX_PROFILES.find((option) => option.value === sexProfile) ?? SEX_PROFILES[0];
   const selectedDiet = DIET_PROFILES.find((option) => option.value === dietProfile) ?? DIET_PROFILES[1];
+  const weightDeltaKg = isWeightValid
+    ? parsedWeightKg - selectedSex.referenceWeightKg
+    : 0;
+  const dietSlopeAdjustmentMl = Math.max(0, weightDeltaKg) * (selectedDiet.weightSlope - BASE_WEIGHT_SLOPE);
   const weightAdjustmentMl = isWeightValid
-    ? Math.round((parsedWeightKg - selectedSex.referenceWeightKg) * selectedDiet.weightSlope)
+    ? Math.round((weightDeltaKg * BASE_WEIGHT_SLOPE) + dietSlopeAdjustmentMl)
     : 0;
   const estimatedDailyGoal = isWeightValid
     ? Math.min(
