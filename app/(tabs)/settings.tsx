@@ -20,6 +20,9 @@ import {
   ScrollView,
   Pressable,
   TextInput,
+  Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Theme } from '@/constants/theme';
@@ -40,6 +43,9 @@ const INTERVALS = [
 
 /** 可选的每日目标 */
 const DAILY_GOALS = [1000, 1500, 2000, 2500, 3000, 3500, 4000];
+
+type ReferenceProfile = 'neutral' | 'female' | 'male';
+type ClimateProfile = 'normal' | 'warm';
 
 /**
  * 选择芯片组件 — 一个可点击的小标签
@@ -101,6 +107,11 @@ export default function SettingsScreen() {
   const { state, updateSettings } = useWater();
   const { settings } = state;
   const [customCupSize, setCustomCupSize] = React.useState(String(settings.cupSize));
+  const [isGoalModalVisible, setIsGoalModalVisible] = React.useState(false);
+  const [weightKg, setWeightKg] = React.useState('');
+  const [activityMinutes, setActivityMinutes] = React.useState('30');
+  const [referenceProfile, setReferenceProfile] = React.useState<ReferenceProfile>('neutral');
+  const [climateProfile, setClimateProfile] = React.useState<ClimateProfile>('normal');
 
   React.useEffect(() => {
     setCustomCupSize(String(settings.cupSize));
@@ -113,6 +124,43 @@ export default function SettingsScreen() {
   const cupSizeOptions = CUP_SIZES.includes(settings.cupSize)
     ? CUP_SIZES
     : [...CUP_SIZES, settings.cupSize];
+  const dailyGoalOptions = DAILY_GOALS.includes(settings.dailyGoal)
+    ? DAILY_GOALS
+    : [...DAILY_GOALS, settings.dailyGoal];
+
+  const parsedWeightKg = Number.parseFloat(weightKg);
+  const parsedActivityMinutes = Number.parseInt(activityMinutes, 10);
+  const isWeightValid = Number.isFinite(parsedWeightKg) && parsedWeightKg > 0;
+
+  const sanitizeDecimal = (value: string) => {
+    const cleaned = value.replace(/[^0-9.]/g, '');
+    const [integerPart, ...decimalParts] = cleaned.split('.');
+    return decimalParts.length > 0
+      ? `${integerPart}.${decimalParts.join('')}`
+      : integerPart;
+  };
+
+  const calculateDailyGoal = () => {
+    if (!isWeightValid) {
+      return;
+    }
+
+    const activityHours = Number.isFinite(parsedActivityMinutes)
+      ? Math.max(parsedActivityMinutes, 0) / 60
+      : 0;
+    const referenceAnchor = referenceProfile === 'male'
+      ? 3000
+      : referenceProfile === 'female'
+        ? 2200
+        : parsedWeightKg * 35;
+    const baseGoal = parsedWeightKg * 35 * 0.75 + referenceAnchor * 0.25;
+    const activityExtra = activityHours * 500;
+    const climateMultiplier = climateProfile === 'warm' ? 1.1 : 1;
+    const estimatedGoal = Math.round(((baseGoal + activityExtra) * climateMultiplier) / 50) * 50;
+
+    updateSettings({ dailyGoal: estimatedGoal });
+    setIsGoalModalVisible(false);
+  };
 
   const saveCustomCupSize = () => {
     if (isCustomCupSizeValid) {
@@ -136,7 +184,7 @@ export default function SettingsScreen() {
           根据体重和活动量，一般建议每天饮水 1.5-2.5 升
         </Text>
         <View style={styles.chipGroup}>
-          {DAILY_GOALS.map((goal) => (
+          {dailyGoalOptions.map((goal) => (
             <Chip
               key={goal}
               label={`${goal} ml`}
@@ -145,6 +193,15 @@ export default function SettingsScreen() {
             />
           ))}
         </View>
+        <Pressable
+          onPress={() => setIsGoalModalVisible(true)}
+          style={({ pressed }) => [
+            styles.estimateButton,
+            pressed && styles.estimateButtonPressed,
+          ]}
+        >
+          <Text style={styles.estimateButtonText}>计算适合我的目标</Text>
+        </Pressable>
       </View>
 
       {/* 单次饮水量 */}
@@ -240,6 +297,123 @@ export default function SettingsScreen() {
       </View>
 
       <View style={{ height: 32 }} />
+
+      <Modal
+        visible={isGoalModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsGoalModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalRoot}
+        >
+          <Pressable
+            style={styles.modalBackdrop}
+            onPress={() => setIsGoalModalVisible(false)}
+          />
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>估算每日目标</Text>
+            <Text style={styles.modalDescription}>
+              结果会作为日常提醒参考，特殊健康情况请按医生建议调整
+            </Text>
+
+            <View style={styles.modalField}>
+              <Text style={styles.modalLabel}>体重</Text>
+              <View style={styles.modalInputShell}>
+                <TextInput
+                  value={weightKg}
+                  onChangeText={(value) => setWeightKg(sanitizeDecimal(value))}
+                  keyboardType="decimal-pad"
+                  placeholder="例如 65"
+                  placeholderTextColor={Theme.colors.textSecondary}
+                  style={styles.modalInput}
+                />
+                <Text style={styles.modalUnit}>kg</Text>
+              </View>
+            </View>
+
+            <View style={styles.modalField}>
+              <Text style={styles.modalLabel}>参考类型</Text>
+              <View style={styles.segmentGroup}>
+                <Chip
+                  label="默认"
+                  selected={referenceProfile === 'neutral'}
+                  onPress={() => setReferenceProfile('neutral')}
+                />
+                <Chip
+                  label="女性"
+                  selected={referenceProfile === 'female'}
+                  onPress={() => setReferenceProfile('female')}
+                />
+                <Chip
+                  label="男性"
+                  selected={referenceProfile === 'male'}
+                  onPress={() => setReferenceProfile('male')}
+                />
+              </View>
+            </View>
+
+            <View style={styles.modalField}>
+              <Text style={styles.modalLabel}>今日运动</Text>
+              <View style={styles.modalInputShell}>
+                <TextInput
+                  value={activityMinutes}
+                  onChangeText={(value) => setActivityMinutes(value.replace(/[^0-9]/g, ''))}
+                  keyboardType="number-pad"
+                  placeholder="30"
+                  placeholderTextColor={Theme.colors.textSecondary}
+                  style={styles.modalInput}
+                />
+                <Text style={styles.modalUnit}>分钟</Text>
+              </View>
+            </View>
+
+            <View style={styles.modalField}>
+              <Text style={styles.modalLabel}>环境</Text>
+              <View style={styles.segmentGroup}>
+                <Chip
+                  label="日常"
+                  selected={climateProfile === 'normal'}
+                  onPress={() => setClimateProfile('normal')}
+                />
+                <Chip
+                  label="偏热/潮湿"
+                  selected={climateProfile === 'warm'}
+                  onPress={() => setClimateProfile('warm')}
+                />
+              </View>
+            </View>
+
+            <View style={styles.modalActions}>
+              <Pressable
+                onPress={() => setIsGoalModalVisible(false)}
+                style={styles.modalSecondaryButton}
+              >
+                <Text style={styles.modalSecondaryText}>取消</Text>
+              </Pressable>
+              <Pressable
+                onPress={calculateDailyGoal}
+                disabled={!isWeightValid}
+                style={({ pressed }) => [
+                  styles.modalPrimaryButton,
+                  pressed && isWeightValid && styles.saveButtonPressed,
+                  !isWeightValid && styles.saveButtonDisabled,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.modalPrimaryText,
+                    !isWeightValid && styles.saveButtonTextDisabled,
+                  ]}
+                >
+                  应用目标
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </ScrollView>
   );
 }
@@ -288,6 +462,24 @@ const styles = StyleSheet.create({
   chipGroup: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+  },
+  estimateButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: Theme.colors.background,
+    borderRadius: Theme.radius.button,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Theme.colors.border,
+    marginTop: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+  },
+  estimateButtonPressed: {
+    opacity: 0.72,
+  },
+  estimateButtonText: {
+    color: Theme.colors.primary,
+    fontFamily: Theme.fonts.medium,
+    fontSize: 14,
   },
   customSection: {
     alignItems: 'flex-start',
@@ -367,5 +559,101 @@ const styles = StyleSheet.create({
     fontFamily: Theme.fonts.regular,
     color: Theme.colors.border,
     marginTop: 4,
+  },
+  modalRoot: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(26, 22, 18, 0.24)',
+  },
+  modalCard: {
+    backgroundColor: Theme.colors.surface,
+    borderRadius: Theme.radius.card,
+    padding: 22,
+    elevation: 4,
+    shadowColor: '#1A1612',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+  },
+  modalTitle: {
+    color: Theme.colors.text,
+    fontFamily: Theme.fonts.medium,
+    fontSize: 20,
+    lineHeight: 26,
+  },
+  modalDescription: {
+    color: Theme.colors.textSecondary,
+    fontFamily: Theme.fonts.regular,
+    fontSize: 13,
+    lineHeight: 20,
+    marginTop: 6,
+    marginBottom: 18,
+  },
+  modalField: {
+    marginBottom: 14,
+  },
+  modalLabel: {
+    color: Theme.colors.text,
+    fontFamily: Theme.fonts.medium,
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  modalInputShell: {
+    minHeight: 44,
+    backgroundColor: Theme.colors.background,
+    borderRadius: Theme.radius.input,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Theme.colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+  },
+  modalInput: {
+    flex: 1,
+    color: Theme.colors.text,
+    fontFamily: Theme.fonts.medium,
+    fontSize: 16,
+    paddingVertical: 9,
+  },
+  modalUnit: {
+    color: Theme.colors.textSecondary,
+    fontFamily: Theme.fonts.medium,
+    fontSize: 14,
+  },
+  segmentGroup: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+    marginTop: 4,
+  },
+  modalSecondaryButton: {
+    minHeight: 42,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+  },
+  modalSecondaryText: {
+    color: Theme.colors.textSecondary,
+    fontFamily: Theme.fonts.medium,
+    fontSize: 14,
+  },
+  modalPrimaryButton: {
+    minHeight: 42,
+    justifyContent: 'center',
+    backgroundColor: Theme.colors.primary,
+    borderRadius: Theme.radius.button,
+    paddingHorizontal: 18,
+  },
+  modalPrimaryText: {
+    color: Theme.colors.surface,
+    fontFamily: Theme.fonts.medium,
+    fontSize: 14,
   },
 });

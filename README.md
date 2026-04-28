@@ -15,7 +15,7 @@ Reverie 是一个温暖、安静、克制的喝水提醒应用。它的目标不
 - 今日饮水进度：用圆形进度展示当前饮水量和每日目标。
 - 快速记录：点击“喝了一杯”即可记录默认杯量。
 - 今日记录：展示每次饮水的时间和毫升数。
-- 极简设置：支持设置每日目标、预设或自定义单次饮水量和提醒间隔。
+- 极简设置：支持设置每日目标、估算个性化饮水目标、预设或自定义单次饮水量和提醒间隔。
 - 本地提醒：通过 Expo 本地通知定时提醒喝水；Expo Go 预览时会跳过原生通知调度。
 - 本地持久化：记录和设置保存在设备本地。
 
@@ -41,6 +41,26 @@ Reverie 的视觉方向是温暖、轻量、留白充足。界面避免强刺激
 - [AsyncStorage](https://react-native-async-storage.github.io/async-storage/)：本地键值存储。
 - [Expo Notifications](https://docs.expo.dev/versions/latest/sdk/notifications/)：本地通知提醒。
 - [React Native SVG](https://github.com/software-mansion/react-native-svg)：绘制圆形进度。
+
+## Hydration Estimate
+
+每日目标估算用于给健康成年人提供日常参考，不替代医生或营养师建议。当前算法综合了：
+
+- 体重基准：以 `35 ml/kg/day` 作为起点。
+- 参考类型：女性参考 `2200 ml/day`、男性参考 `3000 ml/day` 的饮品摄入量锚点；默认则完全按体重估算。
+- 运动补充：每小时运动额外增加约 `500 ml`，作为一般活动出汗的中间估算。
+- 环境调整：偏热或潮湿时整体上调 `10%`。
+
+公式概览：
+
+```text
+基础目标 = 体重 × 35 × 0.75 + 参考锚点 × 0.25
+运动补充 = 运动小时数 × 500
+环境系数 = 日常 1.0 / 偏热或潮湿 1.1
+最终目标 = round((基础目标 + 运动补充) × 环境系数, 50ml)
+```
+
+参考依据包括 National Academies 的饮水充足摄入量、Mayo Clinic 对活动/环境因素的说明，以及 ACSM 运动补液建议。个体差异很大，肾脏、心脏疾病、孕期、哺乳期或特殊用药情况应按专业医疗建议调整。
 
 ## Getting Started
 
@@ -78,7 +98,7 @@ app/
   (tabs)/
     _layout.tsx            # 底部 Tab 导航
     index.tsx              # 首页：进度、按钮、记录
-    settings.tsx           # 设置页：目标、自定义杯量、提醒间隔
+    settings.tsx           # 设置页：目标估算、自定义杯量、提醒间隔
 components/
   GreetingHeader.tsx       # 时间问候
   WaterProgress.tsx        # 圆形进度
@@ -110,6 +130,7 @@ npx.cmd expo install --check
 - [x] 快速添加饮水记录
 - [x] 今日记录列表
 - [x] 设置每日目标、预设杯量、自定义杯量和提醒间隔
+- [x] 根据体重、活动和环境估算每日饮水目标
 - [x] 本地通知提醒
 - [ ] 增加历史统计视图
 - [ ] 增加每周/月度趋势
