@@ -95,11 +95,12 @@ const ACTIVITY_LEVELS: {
 const SEX_PROFILES: {
   value: SexProfile;
   label: string;
-  beverageAnchorMl: number;
+  baseDrinkMl: number;
+  referenceWeightKg: number;
 }[] = [
-  { value: 'unspecified', label: '未指定', beverageAnchorMl: 2600 },
-  { value: 'female', label: '女性', beverageAnchorMl: 2200 },
-  { value: 'male', label: '男性', beverageAnchorMl: 3000 },
+  { value: 'unspecified', label: '未指定', baseDrinkMl: 1600, referenceWeightKg: 60 },
+  { value: 'female', label: '女性', baseDrinkMl: 1500, referenceWeightKg: 55 },
+  { value: 'male', label: '男性', baseDrinkMl: 1700, referenceWeightKg: 65 },
 ];
 
 const DIET_PROFILES: {
@@ -299,14 +300,23 @@ export default function SettingsScreen() {
   const selectedActivity = ACTIVITY_LEVELS.find((option) => option.value === activityLevel) ?? ACTIVITY_LEVELS[0];
   const selectedSex = SEX_PROFILES.find((option) => option.value === sexProfile) ?? SEX_PROFILES[0];
   const selectedDiet = DIET_PROFILES.find((option) => option.value === dietProfile) ?? DIET_PROFILES[1];
+  const weightAdjustmentMl = isWeightValid
+    ? Math.max(
+      -200,
+      Math.min(
+        300,
+        Math.round((parsedWeightKg - selectedSex.referenceWeightKg) * 10),
+      ),
+    )
+    : 0;
   const estimatedDailyGoal = isWeightValid
     ? Math.min(
-      4000,
+      3000,
       Math.max(
         1200,
         Math.round((
-          (parsedWeightKg * 30 * 0.7) +
-          (selectedSex.beverageAnchorMl * 0.3) +
+          selectedSex.baseDrinkMl +
+          weightAdjustmentMl +
           selectedActivity.extraMl +
           selectedDiet.adjustmentMl
         ) / 50) * 50,
@@ -354,7 +364,7 @@ export default function SettingsScreen() {
       {/* 每日饮水目标 */}
       <View style={styles.card}>
         <View style={styles.settingHeader}>
-          <Text style={[styles.cardTitle, styles.headerCardTitle]}>每日饮水目标</Text>
+          <Text style={[styles.cardTitle, styles.headerCardTitle]}>建议喝水目标</Text>
           <Pressable
             onPress={() => setIsGoalModalVisible(true)}
             style={({ pressed }) => [
@@ -367,7 +377,7 @@ export default function SettingsScreen() {
           </Pressable>
         </View>
         <Text style={styles.cardDescription}>
-          根据体重和活动量，一般建议每天饮水 1.5-2.5 升
+          以《中国居民膳食指南》的每日喝水量为基础，再按个人情况调整
         </Text>
         <View style={styles.chipGroup}>
           {dailyGoalOptions.map((goal) => (
@@ -505,9 +515,9 @@ export default function SettingsScreen() {
           >
             <View style={styles.modalHeader}>
               <View style={styles.modalHeaderCopy}>
-                <Text style={styles.modalTitle}>自定义饮水目标</Text>
+                <Text style={styles.modalTitle}>自定义喝水目标</Text>
                 <Text style={styles.modalDescription}>
-                  输入身体数据，估算今天更合适的饮水量
+                  估算适合今天记录和提醒的喝水量
                 </Text>
               </View>
               <Pressable
@@ -566,7 +576,7 @@ export default function SettingsScreen() {
                   ))}
                 </View>
                 <Text style={styles.fieldHint}>
-                  用作成年人饮品摄入参考；也可以保持未指定
+                  以温和气候、低活动水平下的成年人喝水建议为参考
                 </Text>
 
                 <View style={styles.profileDivider} />
