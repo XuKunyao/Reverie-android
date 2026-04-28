@@ -162,18 +162,23 @@ export default function SettingsScreen() {
           ))}
         </View>
         <View style={styles.customSection}>
-          <Text style={styles.customLabel}>自定义：</Text>
-          <View style={styles.customInputRow}>
-            <TextInput
-              value={customCupSize}
-              onChangeText={(value) => setCustomCupSize(value.replace(/[^0-9]/g, ''))}
-              keyboardType="number-pad"
-              maxLength={4}
-              placeholder="250"
-              placeholderTextColor={Theme.colors.textSecondary}
-              style={styles.customInput}
-            />
-            <Text style={styles.inputUnit}>ml</Text>
+          <View style={styles.customCopy}>
+            <Text style={styles.customTitle}>自定义杯量</Text>
+            <Text style={styles.customSubtitle}>输入常用杯子的容量，50-1000 ml</Text>
+          </View>
+          <View style={styles.customControl}>
+            <View style={styles.customInputShell}>
+              <TextInput
+                value={customCupSize}
+                onChangeText={(value) => setCustomCupSize(value.replace(/[^0-9]/g, ''))}
+                keyboardType="number-pad"
+                maxLength={4}
+                placeholder="250"
+                placeholderTextColor={Theme.colors.textSecondary}
+                style={styles.customInput}
+              />
+              <Text style={styles.inputUnit}>ml</Text>
+            </View>
             <Pressable
               onPress={saveCustomCupSize}
               disabled={!isCustomCupSizeValid}
@@ -189,12 +194,11 @@ export default function SettingsScreen() {
                   !isCustomCupSizeValid && styles.saveButtonTextDisabled,
                 ]}
               >
-                保存
+                应用
               </Text>
             </Pressable>
           </View>
         </View>
-        <Text style={styles.inputHint}>可设置 50-1000 ml</Text>
       </View>
 
       {/* 提醒间隔 */}
@@ -287,50 +291,66 @@ const styles = StyleSheet.create({
   },
   customSection: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     flexWrap: 'wrap',
+    gap: 12,
     marginTop: 14,
     paddingTop: 14,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: Theme.colors.border,
   },
-  customLabel: {
+  customCopy: {
+    flex: 1,
+    minWidth: 150,
+  },
+  customTitle: {
     color: Theme.colors.text,
     fontFamily: Theme.fonts.medium,
     fontSize: 14,
-    lineHeight: 40,
-    marginRight: 12,
+    lineHeight: 20,
   },
-  customInputRow: {
+  customSubtitle: {
+    color: Theme.colors.textSecondary,
+    fontFamily: Theme.fonts.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  customControl: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexShrink: 1,
-    flexWrap: 'nowrap',
+    gap: 8,
   },
-  customInput: {
-    width: 92,
+  customInputShell: {
+    width: 118,
+    minHeight: 42,
     backgroundColor: Theme.colors.background,
     borderRadius: Theme.radius.input,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Theme.colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+  },
+  customInput: {
+    flex: 1,
     color: Theme.colors.text,
     fontFamily: Theme.fonts.medium,
     fontSize: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 8,
   },
   inputUnit: {
-    marginLeft: 10,
-    marginRight: 12,
     color: Theme.colors.textSecondary,
     fontFamily: Theme.fonts.regular,
-    fontSize: 14,
+    fontSize: 13,
   },
   saveButton: {
     backgroundColor: Theme.colors.primary,
     borderRadius: Theme.radius.button,
-    paddingHorizontal: 18,
-    paddingVertical: 11,
+    minHeight: 42,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
   },
   saveButtonPressed: {
     backgroundColor: Theme.colors.primaryPressed,
@@ -345,13 +365,6 @@ const styles = StyleSheet.create({
   },
   saveButtonTextDisabled: {
     color: Theme.colors.textSecondary,
-  },
-  inputHint: {
-    color: Theme.colors.textSecondary,
-    fontFamily: Theme.fonts.regular,
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: 8,
   },
   aboutSection: {
     alignItems: 'center',
