@@ -50,7 +50,7 @@ const INTERVALS = [
 
 /** 可选的每日目标 */
 const DAILY_GOALS = [1000, 1500, 2000, 2500, 3000, 3500, 4000];
-const BASE_WEIGHT_SLOPE = 12;
+const BASE_WEIGHT_SLOPE = 14;
 
 type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'high';
 type SexProfile = 'unspecified' | 'female' | 'male';
