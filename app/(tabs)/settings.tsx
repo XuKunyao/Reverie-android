@@ -28,9 +28,9 @@ import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   FadeIn,
+  FadeInDown,
   FadeOut,
-  SlideInDown,
-  SlideOutDown,
+  ZoomOut,
 } from 'react-native-reanimated';
 import { Theme } from '@/constants/theme';
 import { useWater } from '@/contexts/WaterContext';
@@ -143,7 +143,7 @@ function ActivityCard({
     >
       <Feather
         name={option.icon}
-        size={24}
+        size={20}
         color={selected ? Theme.colors.surface : Theme.colors.text}
       />
       <Text
@@ -258,7 +258,19 @@ export default function SettingsScreen() {
 
       {/* 每日饮水目标 */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>每日饮水目标</Text>
+        <View style={styles.settingHeader}>
+          <Text style={[styles.cardTitle, styles.headerCardTitle]}>每日饮水目标</Text>
+          <Pressable
+            onPress={() => setIsGoalModalVisible(true)}
+            style={({ pressed }) => [
+              styles.estimatePill,
+              pressed && styles.estimateButtonPressed,
+            ]}
+          >
+            <Text style={styles.estimatePillText}>自定义目标</Text>
+            <Feather name="chevron-right" size={13} color={Theme.colors.primary} />
+          </Pressable>
+        </View>
         <Text style={styles.cardDescription}>
           根据体重和活动量，一般建议每天饮水 1.5-2.5 升
         </Text>
@@ -272,15 +284,6 @@ export default function SettingsScreen() {
             />
           ))}
         </View>
-        <Pressable
-          onPress={() => setIsGoalModalVisible(true)}
-          style={({ pressed }) => [
-            styles.estimateButton,
-            pressed && styles.estimateButtonPressed,
-          ]}
-        >
-          <Text style={styles.estimateButtonText}>计算适合我的目标</Text>
-        </Pressable>
       </View>
 
       {/* 单次饮水量 */}
@@ -398,19 +401,18 @@ export default function SettingsScreen() {
             />
           </Animated.View>
           <Animated.View
-            entering={SlideInDown.duration(340).springify().damping(19).stiffness(170)}
-            exiting={SlideOutDown.duration(240)}
+            entering={FadeInDown.duration(300).springify().damping(18).stiffness(170)}
+            exiting={ZoomOut.duration(180)}
             style={[
-              styles.modalSheet,
-              { paddingBottom: Math.max(insets.bottom + 14, 24) },
+              styles.modalCard,
+              { marginTop: Math.max(insets.top + 20, 36) },
             ]}
           >
-            <View style={styles.sheetHandle} />
             <View style={styles.modalHeader}>
               <View style={styles.modalHeaderCopy}>
-                <Text style={styles.modalTitle}>计算适合我的饮水目标</Text>
+                <Text style={styles.modalTitle}>自定义饮水目标</Text>
                 <Text style={styles.modalDescription}>
-                  根据你的身体数据和生活习惯，推荐每日饮水量
+                  输入身体数据，估算今天更合适的饮水量
                 </Text>
               </View>
               <Pressable
@@ -422,7 +424,7 @@ export default function SettingsScreen() {
                   pressed && styles.closeButtonPressed,
                 ]}
               >
-                <Feather name="x" size={26} color={Theme.colors.textSecondary} />
+                <Feather name="x" size={21} color={Theme.colors.textSecondary} />
               </Pressable>
             </View>
 
@@ -431,11 +433,11 @@ export default function SettingsScreen() {
               contentContainerStyle={styles.modalScrollContent}
             >
               <View style={styles.profileCard}>
-                <Text style={styles.profileTitle}>我的身体数据</Text>
+                <Text style={styles.profileTitle}>身体数据</Text>
 
                 <View style={styles.weightRow}>
                   <View style={styles.weightLabelGroup}>
-                    <Feather name="box" size={23} color={Theme.colors.textSecondary} />
+                    <Feather name="box" size={18} color={Theme.colors.textSecondary} />
                     <Text style={styles.weightLabel}>体重</Text>
                   </View>
                   <View style={styles.weightInputShell}>
@@ -455,7 +457,7 @@ export default function SettingsScreen() {
                 <View style={styles.profileDivider} />
 
                 <View style={styles.activityHeader}>
-                  <Feather name="activity" size={23} color={Theme.colors.textSecondary} />
+                  <Feather name="activity" size={18} color={Theme.colors.textSecondary} />
                   <Text style={styles.activityHeaderText}>每日活动量</Text>
                 </View>
                 <View style={styles.activityGrid}>
@@ -491,7 +493,7 @@ export default function SettingsScreen() {
                       <View style={styles.waterSurface} />
                     </View>
                     <View style={styles.waterDrop}>
-                      <Feather name="droplet" size={30} color={Theme.colors.primary} />
+                      <Feather name="droplet" size={23} color={Theme.colors.primary} />
                     </View>
                   </View>
                 </View>
@@ -566,6 +568,16 @@ const styles = StyleSheet.create({
     color: Theme.colors.text,
     marginBottom: 6,
   },
+  headerCardTitle: {
+    marginBottom: 0,
+  },
+  settingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 6,
+  },
   cardDescription: {
     fontSize: 14,
     fontFamily: Theme.fonts.regular,
@@ -576,6 +588,23 @@ const styles = StyleSheet.create({
   chipGroup: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+  },
+  estimatePill: {
+    minHeight: 30,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: '#F8EEE7',
+    borderRadius: Theme.radius.full,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#F0D8CC',
+    paddingLeft: 11,
+    paddingRight: 8,
+  },
+  estimatePillText: {
+    color: Theme.colors.primary,
+    fontFamily: Theme.fonts.medium,
+    fontSize: 12,
   },
   estimateButton: {
     alignSelf: 'flex-start',
@@ -676,38 +705,31 @@ const styles = StyleSheet.create({
   },
   modalRoot: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(26, 22, 18, 0.46)',
+    backgroundColor: 'rgba(26, 22, 18, 0.32)',
   },
-  modalSheet: {
-    maxHeight: '92%',
+  modalCard: {
+    maxHeight: '88%',
     backgroundColor: Theme.colors.surface,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderRadius: 24,
     paddingHorizontal: 18,
-    paddingTop: 14,
+    paddingTop: 18,
+    paddingBottom: 18,
     elevation: 4,
     shadowColor: '#1A1612',
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.12,
-    shadowRadius: 18,
-  },
-  sheetHandle: {
-    width: 48,
-    height: 7,
-    borderRadius: Theme.radius.full,
-    backgroundColor: Theme.colors.border,
-    alignSelf: 'center',
-    marginBottom: 24,
+    shadowRadius: 20,
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 16,
-    marginBottom: 20,
+    gap: 12,
+    marginBottom: 14,
   },
   modalHeaderCopy: {
     flex: 1,
@@ -715,19 +737,19 @@ const styles = StyleSheet.create({
   modalTitle: {
     color: Theme.colors.text,
     fontFamily: Theme.fonts.medium,
-    fontSize: 25,
-    lineHeight: 32,
+    fontSize: 20,
+    lineHeight: 26,
   },
   modalDescription: {
     color: Theme.colors.textSecondary,
     fontFamily: Theme.fonts.regular,
-    fontSize: 16,
-    lineHeight: 24,
-    marginTop: 6,
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 4,
   },
   closeButton: {
-    width: 58,
-    height: 58,
+    width: 40,
+    height: 40,
     borderRadius: Theme.radius.full,
     backgroundColor: '#F1ECE4',
     alignItems: 'center',
@@ -741,10 +763,10 @@ const styles = StyleSheet.create({
   },
   profileCard: {
     backgroundColor: Theme.colors.surface,
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Theme.colors.border,
-    padding: 20,
+    padding: 16,
     elevation: 1,
     shadowColor: '#1A1612',
     shadowOffset: { width: 0, height: 1 },
@@ -754,9 +776,9 @@ const styles = StyleSheet.create({
   profileTitle: {
     color: Theme.colors.text,
     fontFamily: Theme.fonts.medium,
-    fontSize: 21,
-    lineHeight: 27,
-    marginBottom: 22,
+    fontSize: 16,
+    lineHeight: 22,
+    marginBottom: 16,
   },
   weightRow: {
     flexDirection: 'row',
@@ -767,77 +789,77 @@ const styles = StyleSheet.create({
   weightLabelGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 10,
     flex: 1,
   },
   weightLabel: {
     color: Theme.colors.text,
     fontFamily: Theme.fonts.medium,
-    fontSize: 17,
+    fontSize: 14,
   },
   weightInputShell: {
-    width: 146,
-    minHeight: 62,
+    width: 112,
+    minHeight: 46,
     backgroundColor: Theme.colors.background,
-    borderRadius: 16,
+    borderRadius: 13,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Theme.colors.border,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 14,
   },
   weightInput: {
     flex: 1,
     color: Theme.colors.text,
     fontFamily: Theme.fonts.medium,
-    fontSize: 20,
-    paddingVertical: 10,
+    fontSize: 16,
+    paddingVertical: 8,
   },
   weightUnit: {
     color: Theme.colors.textSecondary,
     fontFamily: Theme.fonts.medium,
-    fontSize: 16,
+    fontSize: 13,
   },
   fieldHint: {
     color: Theme.colors.textSecondary,
     fontFamily: Theme.fonts.regular,
-    fontSize: 14,
-    lineHeight: 22,
-    marginTop: 14,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 10,
   },
   profileDivider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: Theme.colors.border,
-    marginVertical: 24,
+    marginVertical: 16,
   },
   activityHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    marginBottom: 16,
+    gap: 10,
+    marginBottom: 12,
   },
   activityHeaderText: {
     color: Theme.colors.text,
     fontFamily: Theme.fonts.medium,
-    fontSize: 17,
+    fontSize: 14,
   },
   activityGrid: {
     flexDirection: 'row',
-    gap: 10,
-    marginBottom: 24,
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
   },
   activityCard: {
-    flex: 1,
-    minHeight: 130,
-    minWidth: 0,
+    width: '48.5%',
+    minHeight: 88,
     backgroundColor: Theme.colors.background,
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Theme.colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 8,
-    paddingVertical: 12,
+    paddingVertical: 10,
   },
   activityCardSelected: {
     backgroundColor: Theme.colors.primary,
@@ -849,10 +871,10 @@ const styles = StyleSheet.create({
   activityTitle: {
     color: Theme.colors.text,
     fontFamily: Theme.fonts.medium,
-    fontSize: 14,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 17,
     textAlign: 'center',
-    marginTop: 14,
+    marginTop: 8,
   },
   activityTitleSelected: {
     color: Theme.colors.surface,
@@ -860,22 +882,22 @@ const styles = StyleSheet.create({
   activitySubtitle: {
     color: Theme.colors.textSecondary,
     fontFamily: Theme.fonts.regular,
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 11,
+    lineHeight: 15,
     textAlign: 'center',
-    marginTop: 6,
+    marginTop: 3,
   },
   activitySubtitleSelected: {
     color: Theme.colors.surface,
   },
   resultCard: {
-    minHeight: 164,
+    minHeight: 128,
     backgroundColor: '#FBF2E7',
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Theme.colors.border,
-    padding: 20,
-    marginBottom: 24,
+    padding: 16,
+    marginBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
     overflow: 'hidden',
@@ -887,58 +909,58 @@ const styles = StyleSheet.create({
   resultTitle: {
     color: Theme.colors.text,
     fontFamily: Theme.fonts.medium,
-    fontSize: 19,
-    lineHeight: 25,
+    fontSize: 16,
+    lineHeight: 21,
   },
   resultDescription: {
     color: Theme.colors.textSecondary,
     fontFamily: Theme.fonts.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 6,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 4,
   },
   resultValueRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    marginTop: 14,
+    marginTop: 10,
   },
   resultValue: {
     color: Theme.colors.text,
     fontFamily: Theme.fonts.medium,
-    fontSize: 50,
-    lineHeight: 56,
+    fontSize: 40,
+    lineHeight: 46,
   },
   resultUnit: {
     color: Theme.colors.textSecondary,
     fontFamily: Theme.fonts.medium,
-    fontSize: 18,
-    lineHeight: 28,
-    marginLeft: 8,
-    marginBottom: 5,
+    fontSize: 15,
+    lineHeight: 24,
+    marginLeft: 6,
+    marginBottom: 4,
   },
   cupEstimateRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginTop: 14,
+    gap: 6,
+    marginTop: 10,
   },
   cupEstimateText: {
     color: Theme.colors.textSecondary,
     fontFamily: Theme.fonts.regular,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 12,
+    lineHeight: 18,
   },
   resultIllustration: {
-    width: 96,
-    height: 112,
+    width: 74,
+    height: 88,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 8,
   },
   waterGlass: {
-    width: 72,
-    height: 82,
-    borderRadius: 17,
+    width: 54,
+    height: 62,
+    borderRadius: 14,
     borderWidth: 2,
     borderColor: '#DDC9B3',
     backgroundColor: 'rgba(253, 250, 244, 0.72)',
@@ -946,22 +968,22 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   waterSurface: {
-    height: 35,
+    height: 27,
     backgroundColor: 'rgba(142, 174, 190, 0.28)',
   },
   waterDrop: {
     position: 'absolute',
     right: 0,
-    bottom: 12,
-    width: 54,
-    height: 54,
+    bottom: 8,
+    width: 42,
+    height: 42,
     borderRadius: Theme.radius.full,
     backgroundColor: '#F5E3CF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   modalSecondaryButton: {
-    minHeight: 50,
+    minHeight: 42,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 4,
@@ -973,10 +995,10 @@ const styles = StyleSheet.create({
   modalSecondaryText: {
     color: Theme.colors.textSecondary,
     fontFamily: Theme.fonts.medium,
-    fontSize: 16,
+    fontSize: 14,
   },
   modalPrimaryButton: {
-    minHeight: 58,
+    minHeight: 48,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: Theme.colors.primary,
@@ -986,6 +1008,6 @@ const styles = StyleSheet.create({
   modalPrimaryText: {
     color: Theme.colors.surface,
     fontFamily: Theme.fonts.medium,
-    fontSize: 18,
+    fontSize: 15,
   },
 });
