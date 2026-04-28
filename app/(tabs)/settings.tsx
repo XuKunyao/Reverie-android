@@ -24,12 +24,13 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   FadeIn,
-  FadeInDown,
   FadeOut,
-  ZoomOut,
+  SlideInDown,
+  SlideOutDown,
 } from 'react-native-reanimated';
 import { Theme } from '@/constants/theme';
 import { useWater } from '@/contexts/WaterContext';
@@ -50,8 +51,44 @@ const INTERVALS = [
 /** 可选的每日目标 */
 const DAILY_GOALS = [1000, 1500, 2000, 2500, 3000, 3500, 4000];
 
-type ReferenceProfile = 'neutral' | 'female' | 'male';
-type ClimateProfile = 'normal' | 'warm';
+type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'high';
+
+const ACTIVITY_LEVELS: {
+  value: ActivityLevel;
+  title: string;
+  subtitle: string;
+  icon: React.ComponentProps<typeof Feather>['name'];
+  extraMl: number;
+}[] = [
+  {
+    value: 'sedentary',
+    title: '久坐办公',
+    subtitle: '较少运动',
+    icon: 'monitor',
+    extraMl: 0,
+  },
+  {
+    value: 'light',
+    title: '轻度活动',
+    subtitle: '偶尔运动',
+    icon: 'wind',
+    extraMl: 250,
+  },
+  {
+    value: 'moderate',
+    title: '中度活动',
+    subtitle: '经常运动',
+    icon: 'activity',
+    extraMl: 500,
+  },
+  {
+    value: 'high',
+    title: '高强度',
+    subtitle: '高强度运动',
+    icon: 'zap',
+    extraMl: 800,
+  },
+];
 
 /**
  * 选择芯片组件 — 一个可点击的小标签
@@ -86,6 +123,49 @@ function Chip({
   );
 }
 
+function ActivityCard({
+  option,
+  selected,
+  onPress,
+}: {
+  option: (typeof ACTIVITY_LEVELS)[number];
+  selected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.activityCard,
+        selected && styles.activityCardSelected,
+        pressed && styles.activityCardPressed,
+      ]}
+    >
+      <Feather
+        name={option.icon}
+        size={24}
+        color={selected ? Theme.colors.surface : Theme.colors.text}
+      />
+      <Text
+        style={[
+          styles.activityTitle,
+          selected && styles.activityTitleSelected,
+        ]}
+      >
+        {option.title}
+      </Text>
+      <Text
+        style={[
+          styles.activitySubtitle,
+          selected && styles.activitySubtitleSelected,
+        ]}
+      >
+        {option.subtitle}
+      </Text>
+    </Pressable>
+  );
+}
+
 const chipStyles = StyleSheet.create({
   chip: {
     paddingHorizontal: 16,
@@ -114,10 +194,8 @@ export default function SettingsScreen() {
   const { settings } = state;
   const [customCupSize, setCustomCupSize] = React.useState(String(settings.cupSize));
   const [isGoalModalVisible, setIsGoalModalVisible] = React.useState(false);
-  const [weightKg, setWeightKg] = React.useState('');
-  const [activityMinutes, setActivityMinutes] = React.useState('30');
-  const [referenceProfile, setReferenceProfile] = React.useState<ReferenceProfile>('neutral');
-  const [climateProfile, setClimateProfile] = React.useState<ClimateProfile>('normal');
+  const [weightKg, setWeightKg] = React.useState('60');
+  const [activityLevel, setActivityLevel] = React.useState<ActivityLevel>('sedentary');
 
   React.useEffect(() => {
     setCustomCupSize(String(settings.cupSize));
@@ -135,8 +213,16 @@ export default function SettingsScreen() {
     : [...DAILY_GOALS, settings.dailyGoal];
 
   const parsedWeightKg = Number.parseFloat(weightKg);
-  const parsedActivityMinutes = Number.parseInt(activityMinutes, 10);
   const isWeightValid = Number.isFinite(parsedWeightKg) && parsedWeightKg > 0;
+  const selectedActivity = ACTIVITY_LEVELS.find((option) => option.value === activityLevel) ?? ACTIVITY_LEVELS[0];
+  const estimatedDailyGoal = isWeightValid
+    ? Math.round(((parsedWeightKg * 30) + selectedActivity.extraMl) / 50) * 50
+    : 0;
+  const cupCountMin = estimatedDailyGoal > 0 ? Math.max(1, Math.floor(estimatedDailyGoal / 250)) : 0;
+  const cupCountMax = estimatedDailyGoal > 0 ? Math.max(cupCountMin, Math.ceil(estimatedDailyGoal / 250)) : 0;
+  const cupEstimateText = cupCountMin === cupCountMax
+    ? `约 ${cupCountMin} 杯水（每杯 250ml）`
+    : `约 ${cupCountMin}-${cupCountMax} 杯水（每杯 250ml）`;
 
   const sanitizeDecimal = (value: string) => {
     const cleaned = value.replace(/[^0-9.]/g, '');
@@ -151,20 +237,7 @@ export default function SettingsScreen() {
       return;
     }
 
-    const activityHours = Number.isFinite(parsedActivityMinutes)
-      ? Math.max(parsedActivityMinutes, 0) / 60
-      : 0;
-    const referenceAnchor = referenceProfile === 'male'
-      ? 3000
-      : referenceProfile === 'female'
-        ? 2200
-        : parsedWeightKg * 35;
-    const baseGoal = parsedWeightKg * 35 * 0.75 + referenceAnchor * 0.25;
-    const activityExtra = activityHours * 500;
-    const climateMultiplier = climateProfile === 'warm' ? 1.1 : 1;
-    const estimatedGoal = Math.round(((baseGoal + activityExtra) * climateMultiplier) / 50) * 50;
-
-    updateSettings({ dailyGoal: estimatedGoal });
+    updateSettings({ dailyGoal: estimatedDailyGoal });
     setIsGoalModalVisible(false);
   };
 
@@ -325,108 +398,133 @@ export default function SettingsScreen() {
             />
           </Animated.View>
           <Animated.View
-            entering={FadeInDown.duration(320).springify().damping(18).stiffness(180)}
-            exiting={ZoomOut.duration(180)}
-            style={styles.modalCard}
+            entering={SlideInDown.duration(340).springify().damping(19).stiffness(170)}
+            exiting={SlideOutDown.duration(240)}
+            style={[
+              styles.modalSheet,
+              { paddingBottom: Math.max(insets.bottom + 14, 24) },
+            ]}
           >
-            <Text style={styles.modalTitle}>估算每日目标</Text>
-            <Text style={styles.modalDescription}>
-              结果会作为日常提醒参考，特殊健康情况请按医生建议调整
-            </Text>
-
-            <View style={styles.modalField}>
-              <Text style={styles.modalLabel}>体重</Text>
-              <View style={styles.modalInputShell}>
-                <TextInput
-                  value={weightKg}
-                  onChangeText={(value) => setWeightKg(sanitizeDecimal(value))}
-                  keyboardType="decimal-pad"
-                  placeholder="例如 65"
-                  placeholderTextColor={Theme.colors.textSecondary}
-                  style={styles.modalInput}
-                />
-                <Text style={styles.modalUnit}>kg</Text>
+            <View style={styles.sheetHandle} />
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeaderCopy}>
+                <Text style={styles.modalTitle}>计算适合我的饮水目标</Text>
+                <Text style={styles.modalDescription}>
+                  根据你的身体数据和生活习惯，推荐每日饮水量
+                </Text>
               </View>
-            </View>
-
-            <View style={styles.modalField}>
-              <Text style={styles.modalLabel}>参考类型</Text>
-              <View style={styles.segmentGroup}>
-                <Chip
-                  label="默认"
-                  selected={referenceProfile === 'neutral'}
-                  onPress={() => setReferenceProfile('neutral')}
-                />
-                <Chip
-                  label="女性"
-                  selected={referenceProfile === 'female'}
-                  onPress={() => setReferenceProfile('female')}
-                />
-                <Chip
-                  label="男性"
-                  selected={referenceProfile === 'male'}
-                  onPress={() => setReferenceProfile('male')}
-                />
-              </View>
-            </View>
-
-            <View style={styles.modalField}>
-              <Text style={styles.modalLabel}>今日运动</Text>
-              <View style={styles.modalInputShell}>
-                <TextInput
-                  value={activityMinutes}
-                  onChangeText={(value) => setActivityMinutes(value.replace(/[^0-9]/g, ''))}
-                  keyboardType="number-pad"
-                  placeholder="30"
-                  placeholderTextColor={Theme.colors.textSecondary}
-                  style={styles.modalInput}
-                />
-                <Text style={styles.modalUnit}>分钟</Text>
-              </View>
-            </View>
-
-            <View style={styles.modalField}>
-              <Text style={styles.modalLabel}>环境</Text>
-              <View style={styles.segmentGroup}>
-                <Chip
-                  label="日常"
-                  selected={climateProfile === 'normal'}
-                  onPress={() => setClimateProfile('normal')}
-                />
-                <Chip
-                  label="偏热/潮湿"
-                  selected={climateProfile === 'warm'}
-                  onPress={() => setClimateProfile('warm')}
-                />
-              </View>
-            </View>
-
-            <View style={styles.modalActions}>
               <Pressable
                 onPress={() => setIsGoalModalVisible(false)}
-                style={styles.modalSecondaryButton}
-              >
-                <Text style={styles.modalSecondaryText}>取消</Text>
-              </Pressable>
-              <Pressable
-                onPress={calculateDailyGoal}
-                disabled={!isWeightValid}
+                accessibilityRole="button"
+                accessibilityLabel="关闭"
                 style={({ pressed }) => [
-                  styles.modalPrimaryButton,
-                  pressed && isWeightValid && styles.saveButtonPressed,
-                  !isWeightValid && styles.saveButtonDisabled,
+                  styles.closeButton,
+                  pressed && styles.closeButtonPressed,
                 ]}
               >
-                <Text
-                  style={[
-                    styles.modalPrimaryText,
-                    !isWeightValid && styles.saveButtonTextDisabled,
-                  ]}
-                >
-                  应用目标
-                </Text>
+                <Feather name="x" size={26} color={Theme.colors.textSecondary} />
               </Pressable>
             </View>
+
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.modalScrollContent}
+            >
+              <View style={styles.profileCard}>
+                <Text style={styles.profileTitle}>我的身体数据</Text>
+
+                <View style={styles.weightRow}>
+                  <View style={styles.weightLabelGroup}>
+                    <Feather name="box" size={23} color={Theme.colors.textSecondary} />
+                    <Text style={styles.weightLabel}>体重</Text>
+                  </View>
+                  <View style={styles.weightInputShell}>
+                    <TextInput
+                      value={weightKg}
+                      onChangeText={(value) => setWeightKg(sanitizeDecimal(value))}
+                      keyboardType="decimal-pad"
+                      placeholder="60"
+                      placeholderTextColor={Theme.colors.textSecondary}
+                      style={styles.weightInput}
+                    />
+                    <Text style={styles.weightUnit}>kg</Text>
+                  </View>
+                </View>
+                <Text style={styles.fieldHint}>建议输入实际体重，计算更准确</Text>
+
+                <View style={styles.profileDivider} />
+
+                <View style={styles.activityHeader}>
+                  <Feather name="activity" size={23} color={Theme.colors.textSecondary} />
+                  <Text style={styles.activityHeaderText}>每日活动量</Text>
+                </View>
+                <View style={styles.activityGrid}>
+                  {ACTIVITY_LEVELS.map((option) => (
+                    <ActivityCard
+                      key={option.value}
+                      option={option}
+                      selected={activityLevel === option.value}
+                      onPress={() => setActivityLevel(option.value)}
+                    />
+                  ))}
+                </View>
+
+                <View style={styles.resultCard}>
+                  <View style={styles.resultCopy}>
+                    <Text style={styles.resultTitle}>计算结果</Text>
+                    <Text style={styles.resultDescription}>根据你的数据推荐每日饮水量</Text>
+                    <View style={styles.resultValueRow}>
+                      <Text style={styles.resultValue}>
+                        {isWeightValid ? estimatedDailyGoal : '--'}
+                      </Text>
+                      <Text style={styles.resultUnit}>ml / 天</Text>
+                    </View>
+                    <View style={styles.cupEstimateRow}>
+                      <Feather name="droplet" size={16} color={Theme.colors.textSecondary} />
+                      <Text style={styles.cupEstimateText}>
+                        {isWeightValid ? cupEstimateText : '请输入体重后查看结果'}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.resultIllustration}>
+                    <View style={styles.waterGlass}>
+                      <View style={styles.waterSurface} />
+                    </View>
+                    <View style={styles.waterDrop}>
+                      <Feather name="droplet" size={30} color={Theme.colors.primary} />
+                    </View>
+                  </View>
+                </View>
+
+                <Pressable
+                  onPress={calculateDailyGoal}
+                  disabled={!isWeightValid}
+                  style={({ pressed }) => [
+                    styles.modalPrimaryButton,
+                    pressed && isWeightValid && styles.saveButtonPressed,
+                    !isWeightValid && styles.saveButtonDisabled,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.modalPrimaryText,
+                      !isWeightValid && styles.saveButtonTextDisabled,
+                    ]}
+                  >
+                    应用这个目标
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setIsGoalModalVisible(false)}
+                  style={({ pressed }) => [
+                    styles.modalSecondaryButton,
+                    pressed && styles.modalSecondaryButtonPressed,
+                  ]}
+                >
+                  <Text style={styles.modalSecondaryText}>取消</Text>
+                </Pressable>
+              </View>
+            </ScrollView>
           </Animated.View>
         </KeyboardAvoidingView>
       </Modal>
@@ -578,98 +676,316 @@ const styles = StyleSheet.create({
   },
   modalRoot: {
     flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
+    justifyContent: 'flex-end',
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(26, 22, 18, 0.24)',
+    backgroundColor: 'rgba(26, 22, 18, 0.46)',
   },
-  modalCard: {
+  modalSheet: {
+    maxHeight: '92%',
     backgroundColor: Theme.colors.surface,
-    borderRadius: Theme.radius.card,
-    padding: 22,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 18,
+    paddingTop: 14,
     elevation: 4,
     shadowColor: '#1A1612',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
     shadowRadius: 18,
   },
+  sheetHandle: {
+    width: 48,
+    height: 7,
+    borderRadius: Theme.radius.full,
+    backgroundColor: Theme.colors.border,
+    alignSelf: 'center',
+    marginBottom: 24,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
+    marginBottom: 20,
+  },
+  modalHeaderCopy: {
+    flex: 1,
+  },
   modalTitle: {
     color: Theme.colors.text,
     fontFamily: Theme.fonts.medium,
-    fontSize: 20,
-    lineHeight: 26,
+    fontSize: 25,
+    lineHeight: 32,
   },
   modalDescription: {
     color: Theme.colors.textSecondary,
     fontFamily: Theme.fonts.regular,
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 16,
+    lineHeight: 24,
     marginTop: 6,
-    marginBottom: 18,
   },
-  modalField: {
-    marginBottom: 14,
+  closeButton: {
+    width: 58,
+    height: 58,
+    borderRadius: Theme.radius.full,
+    backgroundColor: '#F1ECE4',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  modalLabel: {
+  closeButtonPressed: {
+    backgroundColor: Theme.colors.border,
+  },
+  modalScrollContent: {
+    paddingBottom: 2,
+  },
+  profileCard: {
+    backgroundColor: Theme.colors.surface,
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Theme.colors.border,
+    padding: 20,
+    elevation: 1,
+    shadowColor: '#1A1612',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+  },
+  profileTitle: {
     color: Theme.colors.text,
     fontFamily: Theme.fonts.medium,
-    fontSize: 14,
-    marginBottom: 8,
+    fontSize: 21,
+    lineHeight: 27,
+    marginBottom: 22,
   },
-  modalInputShell: {
-    minHeight: 44,
+  weightRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+  weightLabelGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    flex: 1,
+  },
+  weightLabel: {
+    color: Theme.colors.text,
+    fontFamily: Theme.fonts.medium,
+    fontSize: 17,
+  },
+  weightInputShell: {
+    width: 146,
+    minHeight: 62,
     backgroundColor: Theme.colors.background,
-    borderRadius: Theme.radius.input,
+    borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: Theme.colors.border,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
+    paddingHorizontal: 20,
   },
-  modalInput: {
+  weightInput: {
     flex: 1,
     color: Theme.colors.text,
     fontFamily: Theme.fonts.medium,
-    fontSize: 16,
-    paddingVertical: 9,
+    fontSize: 20,
+    paddingVertical: 10,
   },
-  modalUnit: {
+  weightUnit: {
     color: Theme.colors.textSecondary,
     fontFamily: Theme.fonts.medium,
+    fontSize: 16,
+  },
+  fieldHint: {
+    color: Theme.colors.textSecondary,
+    fontFamily: Theme.fonts.regular,
     fontSize: 14,
+    lineHeight: 22,
+    marginTop: 14,
   },
-  segmentGroup: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  profileDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: Theme.colors.border,
+    marginVertical: 24,
   },
-  modalActions: {
+  activityHeader: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 16,
+  },
+  activityHeaderText: {
+    color: Theme.colors.text,
+    fontFamily: Theme.fonts.medium,
+    fontSize: 17,
+  },
+  activityGrid: {
+    flexDirection: 'row',
     gap: 10,
-    marginTop: 4,
+    marginBottom: 24,
+  },
+  activityCard: {
+    flex: 1,
+    minHeight: 130,
+    minWidth: 0,
+    backgroundColor: Theme.colors.background,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Theme.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 12,
+  },
+  activityCardSelected: {
+    backgroundColor: Theme.colors.primary,
+    borderColor: Theme.colors.primary,
+  },
+  activityCardPressed: {
+    opacity: 0.82,
+  },
+  activityTitle: {
+    color: Theme.colors.text,
+    fontFamily: Theme.fonts.medium,
+    fontSize: 14,
+    lineHeight: 18,
+    textAlign: 'center',
+    marginTop: 14,
+  },
+  activityTitleSelected: {
+    color: Theme.colors.surface,
+  },
+  activitySubtitle: {
+    color: Theme.colors.textSecondary,
+    fontFamily: Theme.fonts.regular,
+    fontSize: 12,
+    lineHeight: 16,
+    textAlign: 'center',
+    marginTop: 6,
+  },
+  activitySubtitleSelected: {
+    color: Theme.colors.surface,
+  },
+  resultCard: {
+    minHeight: 164,
+    backgroundColor: '#FBF2E7',
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Theme.colors.border,
+    padding: 20,
+    marginBottom: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  resultCopy: {
+    flex: 1,
+    zIndex: 1,
+  },
+  resultTitle: {
+    color: Theme.colors.text,
+    fontFamily: Theme.fonts.medium,
+    fontSize: 19,
+    lineHeight: 25,
+  },
+  resultDescription: {
+    color: Theme.colors.textSecondary,
+    fontFamily: Theme.fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 6,
+  },
+  resultValueRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginTop: 14,
+  },
+  resultValue: {
+    color: Theme.colors.text,
+    fontFamily: Theme.fonts.medium,
+    fontSize: 50,
+    lineHeight: 56,
+  },
+  resultUnit: {
+    color: Theme.colors.textSecondary,
+    fontFamily: Theme.fonts.medium,
+    fontSize: 18,
+    lineHeight: 28,
+    marginLeft: 8,
+    marginBottom: 5,
+  },
+  cupEstimateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 14,
+  },
+  cupEstimateText: {
+    color: Theme.colors.textSecondary,
+    fontFamily: Theme.fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  resultIllustration: {
+    width: 96,
+    height: 112,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+  },
+  waterGlass: {
+    width: 72,
+    height: 82,
+    borderRadius: 17,
+    borderWidth: 2,
+    borderColor: '#DDC9B3',
+    backgroundColor: 'rgba(253, 250, 244, 0.72)',
+    justifyContent: 'flex-end',
+    overflow: 'hidden',
+  },
+  waterSurface: {
+    height: 35,
+    backgroundColor: 'rgba(142, 174, 190, 0.28)',
+  },
+  waterDrop: {
+    position: 'absolute',
+    right: 0,
+    bottom: 12,
+    width: 54,
+    height: 54,
+    borderRadius: Theme.radius.full,
+    backgroundColor: '#F5E3CF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalSecondaryButton: {
-    minHeight: 42,
+    minHeight: 50,
     justifyContent: 'center',
-    paddingHorizontal: 16,
+    alignItems: 'center',
+    marginTop: 4,
+    borderRadius: Theme.radius.button,
+  },
+  modalSecondaryButtonPressed: {
+    backgroundColor: Theme.colors.background,
   },
   modalSecondaryText: {
     color: Theme.colors.textSecondary,
     fontFamily: Theme.fonts.medium,
-    fontSize: 14,
+    fontSize: 16,
   },
   modalPrimaryButton: {
-    minHeight: 42,
+    minHeight: 58,
     justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: Theme.colors.primary,
-    borderRadius: Theme.radius.button,
+    borderRadius: Theme.radius.full,
     paddingHorizontal: 18,
   },
   modalPrimaryText: {
     color: Theme.colors.surface,
     fontFamily: Theme.fonts.medium,
-    fontSize: 14,
+    fontSize: 18,
   },
 });
