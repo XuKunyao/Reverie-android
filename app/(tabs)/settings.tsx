@@ -290,17 +290,12 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   customSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 12,
+    alignItems: 'flex-start',
     marginTop: 6,
     paddingTop: 4,
   },
   customCopy: {
-    flex: 1,
-    minWidth: 150,
+    marginBottom: 8,
   },
   customTitle: {
     color: Theme.colors.textSecondary,
