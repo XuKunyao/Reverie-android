@@ -25,6 +25,12 @@ import {
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  FadeOut,
+  ZoomOut,
+} from 'react-native-reanimated';
 import { Theme } from '@/constants/theme';
 import { useWater } from '@/contexts/WaterContext';
 
@@ -301,18 +307,28 @@ export default function SettingsScreen() {
       <Modal
         visible={isGoalModalVisible}
         transparent
-        animationType="fade"
+        animationType="none"
         onRequestClose={() => setIsGoalModalVisible(false)}
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.modalRoot}
         >
-          <Pressable
+          <Animated.View
+            entering={FadeIn.duration(260)}
+            exiting={FadeOut.duration(220)}
             style={styles.modalBackdrop}
-            onPress={() => setIsGoalModalVisible(false)}
-          />
-          <View style={styles.modalCard}>
+          >
+            <Pressable
+              style={StyleSheet.absoluteFill}
+              onPress={() => setIsGoalModalVisible(false)}
+            />
+          </Animated.View>
+          <Animated.View
+            entering={FadeInDown.duration(320).springify().damping(18).stiffness(180)}
+            exiting={ZoomOut.duration(180)}
+            style={styles.modalCard}
+          >
             <Text style={styles.modalTitle}>估算每日目标</Text>
             <Text style={styles.modalDescription}>
               结果会作为日常提醒参考，特殊健康情况请按医生建议调整
@@ -411,7 +427,7 @@ export default function SettingsScreen() {
                 </Text>
               </Pressable>
             </View>
-          </View>
+          </Animated.View>
         </KeyboardAvoidingView>
       </Modal>
     </ScrollView>
