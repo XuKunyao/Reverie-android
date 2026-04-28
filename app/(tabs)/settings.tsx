@@ -114,7 +114,7 @@ const DIET_PROFILES: {
     value: 'hydrating',
     title: '清淡多蔬果',
     subtitle: '食物含水较多',
-    adjustmentMl: -100,
+    adjustmentMl: 0,
     weightSlope: 10,
   },
   {
