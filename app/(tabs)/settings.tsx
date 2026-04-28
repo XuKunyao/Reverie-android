@@ -162,7 +162,7 @@ export default function SettingsScreen() {
           ))}
         </View>
         <View style={styles.customSection}>
-          <Text style={styles.customLabel}>自定义设置：</Text>
+          <Text style={styles.customLabel}>自定义：</Text>
           <View style={styles.customInputRow}>
             <TextInput
               value={customCupSize}
