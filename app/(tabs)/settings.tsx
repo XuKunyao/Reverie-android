@@ -295,10 +295,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     flexWrap: 'wrap',
     gap: 12,
-    marginTop: 14,
-    paddingTop: 14,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Theme.colors.border,
+    marginTop: 6,
+    paddingTop: 4,
   },
   customCopy: {
     flex: 1,
