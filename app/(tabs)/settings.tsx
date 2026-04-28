@@ -71,24 +71,24 @@ const ACTIVITY_LEVELS: {
   },
   {
     value: 'light',
-    title: '轻度活动',
+    title: '较少运动',
     subtitle: '偶尔运动',
     icon: 'wind',
-    extraMl: 250,
+    extraMl: 200,
   },
   {
     value: 'moderate',
     title: '中度活动',
     subtitle: '经常运动',
     icon: 'activity',
-    extraMl: 500,
+    extraMl: 400,
   },
   {
     value: 'high',
     title: '高强度',
     subtitle: '高强度运动',
     icon: 'zap',
-    extraMl: 800,
+    extraMl: 700,
   },
 ];
 
@@ -108,24 +108,28 @@ const DIET_PROFILES: {
   title: string;
   subtitle: string;
   adjustmentMl: number;
+  weightSlope: number;
 }[] = [
   {
     value: 'hydrating',
     title: '清淡多蔬果',
     subtitle: '食物含水较多',
-    adjustmentMl: -150,
+    adjustmentMl: -100,
+    weightSlope: 10,
   },
   {
     value: 'balanced',
     title: '均衡日常',
     subtitle: '正常三餐',
     adjustmentMl: 0,
+    weightSlope: 12,
   },
   {
     value: 'salty',
     title: '偏咸外卖多',
     subtitle: '盐分摄入较高',
     adjustmentMl: 250,
+    weightSlope: 15,
   },
 ];
 
@@ -301,13 +305,7 @@ export default function SettingsScreen() {
   const selectedSex = SEX_PROFILES.find((option) => option.value === sexProfile) ?? SEX_PROFILES[0];
   const selectedDiet = DIET_PROFILES.find((option) => option.value === dietProfile) ?? DIET_PROFILES[1];
   const weightAdjustmentMl = isWeightValid
-    ? Math.max(
-      -200,
-      Math.min(
-        300,
-        Math.round((parsedWeightKg - selectedSex.referenceWeightKg) * 10),
-      ),
-    )
+    ? Math.round((parsedWeightKg - selectedSex.referenceWeightKg) * selectedDiet.weightSlope)
     : 0;
   const estimatedDailyGoal = isWeightValid
     ? Math.min(
