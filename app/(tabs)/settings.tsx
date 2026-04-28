@@ -166,7 +166,6 @@ export default function SettingsScreen() {
         <View style={styles.customSection}>
           <View style={styles.customCopy}>
             <Text style={styles.customTitle}>自定义杯量</Text>
-            <Text style={styles.customSubtitle}>输入常用杯子的容量</Text>
           </View>
           <View style={styles.customControl}>
             <View style={styles.customInputShell}>
@@ -304,17 +303,10 @@ const styles = StyleSheet.create({
     minWidth: 150,
   },
   customTitle: {
-    color: Theme.colors.text,
-    fontFamily: Theme.fonts.medium,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  customSubtitle: {
     color: Theme.colors.textSecondary,
     fontFamily: Theme.fonts.regular,
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: 2,
+    fontSize: 14,
+    lineHeight: 20,
   },
   customControl: {
     flexDirection: 'row',
