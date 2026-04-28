@@ -108,25 +108,25 @@ const DIET_PROFILES: {
   value: DietProfile;
   title: string;
   subtitle: string;
-  weightSlope: number;
+  adjustmentMl: number;
 }[] = [
   {
     value: 'hydrating',
     title: '清淡多蔬果',
     subtitle: '食物含水较多',
-    weightSlope: 10,
+    adjustmentMl: -100,
   },
   {
     value: 'balanced',
     title: '均衡日常',
     subtitle: '正常三餐',
-    weightSlope: 12,
+    adjustmentMl: 0,
   },
   {
     value: 'salty',
     title: '偏咸外卖多',
     subtitle: '盐分摄入较高',
-    weightSlope: 15,
+    adjustmentMl: 200,
   },
 ];
 
@@ -301,12 +301,8 @@ export default function SettingsScreen() {
   const selectedActivity = ACTIVITY_LEVELS.find((option) => option.value === activityLevel) ?? ACTIVITY_LEVELS[0];
   const selectedSex = SEX_PROFILES.find((option) => option.value === sexProfile) ?? SEX_PROFILES[0];
   const selectedDiet = DIET_PROFILES.find((option) => option.value === dietProfile) ?? DIET_PROFILES[1];
-  const weightDeltaKg = isWeightValid
-    ? parsedWeightKg - selectedSex.referenceWeightKg
-    : 0;
-  const dietSlopeAdjustmentMl = Math.max(0, weightDeltaKg) * (selectedDiet.weightSlope - BASE_WEIGHT_SLOPE);
   const weightAdjustmentMl = isWeightValid
-    ? Math.round((weightDeltaKg * BASE_WEIGHT_SLOPE) + dietSlopeAdjustmentMl)
+    ? Math.round((parsedWeightKg - selectedSex.referenceWeightKg) * BASE_WEIGHT_SLOPE)
     : 0;
   const estimatedDailyGoal = isWeightValid
     ? Math.min(
@@ -316,6 +312,7 @@ export default function SettingsScreen() {
         Math.round((
           selectedSex.baseDrinkMl +
           weightAdjustmentMl +
+          selectedDiet.adjustmentMl +
           selectedActivity.extraMl
         ) / 50) * 50,
       ),
