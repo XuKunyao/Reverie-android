@@ -107,28 +107,24 @@ const DIET_PROFILES: {
   value: DietProfile;
   title: string;
   subtitle: string;
-  adjustmentMl: number;
   weightSlope: number;
 }[] = [
   {
     value: 'hydrating',
     title: '清淡多蔬果',
     subtitle: '食物含水较多',
-    adjustmentMl: 0,
     weightSlope: 10,
   },
   {
     value: 'balanced',
     title: '均衡日常',
     subtitle: '正常三餐',
-    adjustmentMl: 0,
     weightSlope: 12,
   },
   {
     value: 'salty',
     title: '偏咸外卖多',
     subtitle: '盐分摄入较高',
-    adjustmentMl: 250,
     weightSlope: 15,
   },
 ];
@@ -315,8 +311,7 @@ export default function SettingsScreen() {
         Math.round((
           selectedSex.baseDrinkMl +
           weightAdjustmentMl +
-          selectedActivity.extraMl +
-          selectedDiet.adjustmentMl
+          selectedActivity.extraMl
         ) / 50) * 50,
       ),
     )
