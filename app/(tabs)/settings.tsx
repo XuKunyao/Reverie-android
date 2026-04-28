@@ -19,6 +19,7 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
+  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Theme } from '@/constants/theme';
@@ -99,6 +100,23 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { state, updateSettings } = useWater();
   const { settings } = state;
+  const [customCupSize, setCustomCupSize] = React.useState(String(settings.cupSize));
+
+  React.useEffect(() => {
+    setCustomCupSize(String(settings.cupSize));
+  }, [settings.cupSize]);
+
+  const parsedCustomCupSize = Number.parseInt(customCupSize, 10);
+  const isCustomCupSizeValid =
+    Number.isFinite(parsedCustomCupSize) &&
+    parsedCustomCupSize >= 50 &&
+    parsedCustomCupSize <= 1000;
+
+  const saveCustomCupSize = () => {
+    if (isCustomCupSizeValid) {
+      updateSettings({ cupSize: parsedCustomCupSize });
+    }
+  };
 
   return (
     <ScrollView
@@ -143,13 +161,44 @@ export default function SettingsScreen() {
             />
           ))}
         </View>
+        <View style={styles.customInputRow}>
+          <TextInput
+            value={customCupSize}
+            onChangeText={(value) => setCustomCupSize(value.replace(/[^0-9]/g, ''))}
+            keyboardType="number-pad"
+            maxLength={4}
+            placeholder="自定义"
+            placeholderTextColor={Theme.colors.textSecondary}
+            style={styles.customInput}
+          />
+          <Text style={styles.inputUnit}>ml</Text>
+          <Pressable
+            onPress={saveCustomCupSize}
+            disabled={!isCustomCupSizeValid}
+            style={({ pressed }) => [
+              styles.saveButton,
+              pressed && isCustomCupSizeValid && styles.saveButtonPressed,
+              !isCustomCupSizeValid && styles.saveButtonDisabled,
+            ]}
+          >
+            <Text
+              style={[
+                styles.saveButtonText,
+                !isCustomCupSizeValid && styles.saveButtonTextDisabled,
+              ]}
+            >
+              保存
+            </Text>
+          </Pressable>
+        </View>
+        <Text style={styles.inputHint}>可设置 50-1000 ml</Text>
       </View>
 
       {/* 提醒间隔 */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>提醒间隔</Text>
         <Text style={styles.cardDescription}>
-          定期收到温柔的喝水提醒通知
+          定期收到喝水提醒通知
         </Text>
         <View style={styles.chipGroup}>
           {INTERVALS.map((interval) => {
@@ -232,6 +281,57 @@ const styles = StyleSheet.create({
   chipGroup: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+  },
+  customInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  customInput: {
+    width: 112,
+    backgroundColor: Theme.colors.background,
+    borderRadius: Theme.radius.input,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Theme.colors.border,
+    color: Theme.colors.text,
+    fontFamily: Theme.fonts.medium,
+    fontSize: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  inputUnit: {
+    marginLeft: 10,
+    marginRight: 12,
+    color: Theme.colors.textSecondary,
+    fontFamily: Theme.fonts.regular,
+    fontSize: 14,
+  },
+  saveButton: {
+    backgroundColor: Theme.colors.primary,
+    borderRadius: Theme.radius.button,
+    paddingHorizontal: 18,
+    paddingVertical: 11,
+  },
+  saveButtonPressed: {
+    backgroundColor: Theme.colors.primaryPressed,
+  },
+  saveButtonDisabled: {
+    backgroundColor: Theme.colors.border,
+  },
+  saveButtonText: {
+    color: Theme.colors.surface,
+    fontFamily: Theme.fonts.medium,
+    fontSize: 14,
+  },
+  saveButtonTextDisabled: {
+    color: Theme.colors.textSecondary,
+  },
+  inputHint: {
+    color: Theme.colors.textSecondary,
+    fontFamily: Theme.fonts.regular,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 8,
   },
   aboutSection: {
     alignItems: 'center',
