@@ -109,8 +109,10 @@ export default function SettingsScreen() {
   const parsedCustomCupSize = Number.parseInt(customCupSize, 10);
   const isCustomCupSizeValid =
     Number.isFinite(parsedCustomCupSize) &&
-    parsedCustomCupSize >= 50 &&
-    parsedCustomCupSize <= 1000;
+    parsedCustomCupSize > 0;
+  const cupSizeOptions = CUP_SIZES.includes(settings.cupSize)
+    ? CUP_SIZES
+    : [...CUP_SIZES, settings.cupSize];
 
   const saveCustomCupSize = () => {
     if (isCustomCupSizeValid) {
@@ -152,7 +154,7 @@ export default function SettingsScreen() {
           每次点击“喝了一杯”时记录的水量
         </Text>
         <View style={styles.chipGroup}>
-          {CUP_SIZES.map((size) => (
+          {cupSizeOptions.map((size) => (
             <Chip
               key={size}
               label={`${size} ml`}
@@ -164,7 +166,7 @@ export default function SettingsScreen() {
         <View style={styles.customSection}>
           <View style={styles.customCopy}>
             <Text style={styles.customTitle}>自定义杯量</Text>
-            <Text style={styles.customSubtitle}>输入常用杯子的容量，50-1000 ml</Text>
+            <Text style={styles.customSubtitle}>输入常用杯子的容量</Text>
           </View>
           <View style={styles.customControl}>
             <View style={styles.customInputShell}>
@@ -172,7 +174,6 @@ export default function SettingsScreen() {
                 value={customCupSize}
                 onChangeText={(value) => setCustomCupSize(value.replace(/[^0-9]/g, ''))}
                 keyboardType="number-pad"
-                maxLength={4}
                 placeholder="250"
                 placeholderTextColor={Theme.colors.textSecondary}
                 style={styles.customInput}
@@ -340,8 +341,8 @@ const styles = StyleSheet.create({
   },
   inputUnit: {
     color: Theme.colors.textSecondary,
-    fontFamily: Theme.fonts.regular,
-    fontSize: 13,
+    fontFamily: Theme.fonts.medium,
+    fontSize: 14,
   },
   saveButton: {
     backgroundColor: Theme.colors.primary,
