@@ -161,35 +161,38 @@ export default function SettingsScreen() {
             />
           ))}
         </View>
-        <View style={styles.customInputRow}>
-          <TextInput
-            value={customCupSize}
-            onChangeText={(value) => setCustomCupSize(value.replace(/[^0-9]/g, ''))}
-            keyboardType="number-pad"
-            maxLength={4}
-            placeholder="自定义"
-            placeholderTextColor={Theme.colors.textSecondary}
-            style={styles.customInput}
-          />
-          <Text style={styles.inputUnit}>ml</Text>
-          <Pressable
-            onPress={saveCustomCupSize}
-            disabled={!isCustomCupSizeValid}
-            style={({ pressed }) => [
-              styles.saveButton,
-              pressed && isCustomCupSizeValid && styles.saveButtonPressed,
-              !isCustomCupSizeValid && styles.saveButtonDisabled,
-            ]}
-          >
-            <Text
-              style={[
-                styles.saveButtonText,
-                !isCustomCupSizeValid && styles.saveButtonTextDisabled,
+        <View style={styles.customSection}>
+          <Text style={styles.customLabel}>自定义设置：</Text>
+          <View style={styles.customInputRow}>
+            <TextInput
+              value={customCupSize}
+              onChangeText={(value) => setCustomCupSize(value.replace(/[^0-9]/g, ''))}
+              keyboardType="number-pad"
+              maxLength={4}
+              placeholder="250"
+              placeholderTextColor={Theme.colors.textSecondary}
+              style={styles.customInput}
+            />
+            <Text style={styles.inputUnit}>ml</Text>
+            <Pressable
+              onPress={saveCustomCupSize}
+              disabled={!isCustomCupSizeValid}
+              style={({ pressed }) => [
+                styles.saveButton,
+                pressed && isCustomCupSizeValid && styles.saveButtonPressed,
+                !isCustomCupSizeValid && styles.saveButtonDisabled,
               ]}
             >
-              保存
-            </Text>
-          </Pressable>
+              <Text
+                style={[
+                  styles.saveButtonText,
+                  !isCustomCupSizeValid && styles.saveButtonTextDisabled,
+                ]}
+              >
+                保存
+              </Text>
+            </Pressable>
+          </View>
         </View>
         <Text style={styles.inputHint}>可设置 50-1000 ml</Text>
       </View>
@@ -282,13 +285,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
+  customSection: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Theme.colors.border,
+  },
+  customLabel: {
+    color: Theme.colors.text,
+    fontFamily: Theme.fonts.medium,
+    fontSize: 14,
+    lineHeight: 40,
+    marginRight: 12,
+  },
   customInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    flexShrink: 1,
+    flexWrap: 'nowrap',
   },
   customInput: {
-    width: 112,
+    width: 92,
     backgroundColor: Theme.colors.background,
     borderRadius: Theme.radius.input,
     borderWidth: StyleSheet.hairlineWidth,
