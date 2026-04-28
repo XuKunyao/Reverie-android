@@ -165,7 +165,7 @@ export default function SettingsScreen() {
         </View>
         <View style={styles.customSection}>
           <View style={styles.customCopy}>
-            <Text style={styles.customTitle}>自定义杯量</Text>
+            <Text style={styles.customTitle}>自定义杯量：</Text>
           </View>
           <View style={styles.customControl}>
             <View style={styles.customInputShell}>
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   customInputShell: {
-    width: 118,
+    width: 100,
     minHeight: 42,
     backgroundColor: Theme.colors.background,
     borderRadius: Theme.radius.input,
@@ -326,9 +326,9 @@ const styles = StyleSheet.create({
   },
   customInput: {
     flex: 1,
-    color: Theme.colors.text,
+    color: Theme.colors.textSecondary,
     fontFamily: Theme.fonts.medium,
-    fontSize: 16,
+    fontSize: 14,
     paddingVertical: 8,
   },
   inputUnit: {
