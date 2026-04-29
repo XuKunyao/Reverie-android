@@ -12,6 +12,12 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import Animated, {
+  Extrapolation,
+  interpolate,
+  useAnimatedStyle,
+  type SharedValue,
+} from 'react-native-reanimated';
 import { Theme } from '@/constants/theme';
 
 interface WaterLogItemProps {
@@ -28,26 +34,71 @@ function formatTime(timestamp: number): string {
   return `${hours}:${minutes}`;
 }
 
-export function WaterLogItem({ amount, timestamp, onDelete }: WaterLogItemProps) {
-  const renderRightActions = () => (
+function DeleteAction({
+  progress,
+  onDelete,
+}: {
+  progress: SharedValue<number>;
+  onDelete?: () => void;
+}) {
+  const actionStyle = useAnimatedStyle(() => {
+    const clampedProgress = Math.min(progress.value, 1);
+
+    return {
+      opacity: interpolate(
+        clampedProgress,
+        [0, 0.35, 1],
+        [0, 0.72, 1],
+        Extrapolation.CLAMP,
+      ),
+      transform: [
+        {
+          translateX: interpolate(
+            clampedProgress,
+            [0, 1],
+            [22, 0],
+            Extrapolation.CLAMP,
+          ),
+        },
+        {
+          scale: interpolate(
+            clampedProgress,
+            [0, 1],
+            [0.92, 1],
+            Extrapolation.CLAMP,
+          ),
+        },
+      ],
+    };
+  });
+
+  return (
     <View style={styles.deleteActionWrap}>
-      <Pressable
-        onPress={onDelete}
-        style={({ pressed }) => [
-          styles.deleteAction,
-          pressed && styles.deleteActionPressed,
-        ]}
-      >
-        <Feather name="trash-2" size={17} color={Theme.colors.surface} />
-        <Text style={styles.deleteText}>删除</Text>
-      </Pressable>
+      <Animated.View style={[styles.deleteActionMotion, actionStyle]}>
+        <Pressable
+          onPress={onDelete}
+          style={({ pressed }) => [
+            styles.deleteAction,
+            pressed && styles.deleteActionPressed,
+          ]}
+        >
+          <Feather name="trash-2" size={17} color={Theme.colors.surface} />
+          <Text style={styles.deleteText}>删除</Text>
+        </Pressable>
+      </Animated.View>
     </View>
+  );
+}
+
+export function WaterLogItem({ amount, timestamp, onDelete }: WaterLogItemProps) {
+  const renderRightActions = (progress: SharedValue<number>) => (
+    <DeleteAction progress={progress} onDelete={onDelete} />
   );
 
   return (
     <ReanimatedSwipeable
-      friction={1.8}
-      rightThreshold={42}
+      friction={2.15}
+      rightThreshold={38}
       overshootRight={false}
       renderRightActions={renderRightActions}
       containerStyle={styles.swipeContainer}
@@ -107,6 +158,9 @@ const styles = StyleSheet.create({
     borderBottomColor: Theme.colors.border,
     alignItems: 'stretch',
     justifyContent: 'center',
+  },
+  deleteActionMotion: {
+    flex: 1,
   },
   deleteAction: {
     flex: 1,
