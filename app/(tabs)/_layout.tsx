@@ -1,9 +1,10 @@
 /**
  * Tab 导航布局 — 底部标签栏
  *
- * 只有两个 Tab：
+ * 三个 Tab：
  * 1. 首页（index）— 喝水进度与记录
- * 2. 设置（settings）— 极简设置页
+ * 2. 记录（history）— 饮水趋势与汇总
+ * 3. 设置（settings）— 极简设置页
  *
  * 样式遵循 Reverie 的温暖极简设计：
  * - Tab 栏背景使用卡片色（#FDFAF4）
@@ -67,6 +68,15 @@ export default function TabLayout() {
           title: '首页',
           tabBarIcon: ({ focused }) => (
             <TabIcon name="droplet" focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="history"
+        options={{
+          title: '记录',
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name="bar-chart-2" focused={focused} />
           ),
         }}
       />

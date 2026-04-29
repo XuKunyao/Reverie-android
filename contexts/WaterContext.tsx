@@ -20,6 +20,7 @@ import {
   DEFAULT_SETTINGS,
   getTodayKey,
   saveLogsForDate,
+  saveGoalForDate,
   loadLogsForDate,
   saveSettings,
   loadSettings,
@@ -165,8 +166,9 @@ export function WaterProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (state.isLoaded) {
       saveLogsForDate(state.dateKey, state.todayLogs);
+      saveGoalForDate(state.dateKey, state.settings.dailyGoal);
     }
-  }, [state.todayLogs, state.dateKey, state.isLoaded]);
+  }, [state.todayLogs, state.dateKey, state.settings.dailyGoal, state.isLoaded]);
 
   // 跨过本地 0 点后自动切换到新一天的数据
   useEffect(() => {
@@ -197,6 +199,7 @@ export function WaterProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (state.isLoaded) {
       saveSettings(state.settings);
+      saveGoalForDate(state.dateKey, state.settings.dailyGoal);
       // 更新提醒调度
       if (state.settings.reminderEnabled) {
         scheduleWaterReminder(state.settings.reminderInterval);
