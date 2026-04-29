@@ -31,11 +31,11 @@ import Animated, {
   FadeIn,
   FadeInDown,
   FadeOut,
+  FadeOutDown,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   withTiming,
-  ZoomOut,
 } from 'react-native-reanimated';
 import { Theme } from '@/constants/theme';
 import { useWater } from '@/contexts/WaterContext';
@@ -555,8 +555,8 @@ export default function SettingsScreen() {
           style={styles.modalRoot}
         >
           <Animated.View
-            entering={FadeIn.duration(260)}
-            exiting={FadeOut.duration(220)}
+            entering={FadeIn.duration(360)}
+            exiting={FadeOut.duration(260)}
             style={styles.modalBackdrop}
           >
             <Pressable
@@ -565,8 +565,8 @@ export default function SettingsScreen() {
             />
           </Animated.View>
           <Animated.View
-            entering={FadeInDown.duration(300).springify().damping(18).stiffness(170)}
-            exiting={ZoomOut.duration(180)}
+            entering={FadeInDown.duration(460).springify().damping(22).stiffness(105).mass(0.8)}
+            exiting={FadeOutDown.duration(240)}
             style={[
               styles.modalCard,
               { marginTop: Math.max(insets.top + 20, 36) },
