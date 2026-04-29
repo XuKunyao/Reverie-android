@@ -23,6 +23,7 @@ import {
   Modal,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -51,6 +52,7 @@ const INTERVALS = [
 /** 可选的每日目标 */
 const DAILY_GOALS = [1000, 1500, 2000, 2500, 3000, 3500, 4000];
 const BASE_WEIGHT_SLOPE = 14;
+const WATER_GLASS_IMAGE = require('../../assets/images/water-glass.png');
 
 type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'high';
 type SexProfile = 'unspecified' | 'female' | 'male';
@@ -625,17 +627,11 @@ export default function SettingsScreen() {
                     </View>
                   </View>
                   <View style={styles.resultIllustration}>
-                    <View style={styles.illustrationHalo} />
-                    <View style={styles.waterGlass}>
-                      <View style={styles.glassRim} />
-                      <View style={styles.glassHighlight} />
-                      <View style={styles.waterSurface} />
-                      <View style={styles.glassBase} />
-                    </View>
-                    <View style={styles.waterDrop}>
-                      <View style={styles.dropHighlight} />
-                      <Feather name="droplet" size={24} color={Theme.colors.primary} />
-                    </View>
+                    <Image
+                      source={WATER_GLASS_IMAGE}
+                      style={styles.resultImage}
+                      resizeMode="contain"
+                    />
                   </View>
                 </View>
 
@@ -1147,89 +1143,16 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   resultIllustration: {
-    width: 82,
+    width: 86,
     height: 92,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 8,
   },
-  illustrationHalo: {
-    position: 'absolute',
-    width: 78,
-    height: 78,
-    borderRadius: Theme.radius.full,
-    backgroundColor: 'rgba(245, 227, 207, 0.52)',
-    right: -4,
-    bottom: 4,
-  },
-  waterGlass: {
-    width: 58,
-    height: 68,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    borderBottomLeftRadius: 13,
-    borderBottomRightRadius: 13,
-    borderWidth: 2,
-    borderColor: '#D9C3A9',
-    backgroundColor: 'rgba(253, 250, 244, 0.66)',
-    justifyContent: 'flex-end',
-    overflow: 'hidden',
-    shadowColor: '#1A1612',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 5,
-  },
-  glassRim: {
-    position: 'absolute',
-    top: 5,
-    left: 8,
-    right: 8,
-    height: 3,
-    borderRadius: Theme.radius.full,
-    backgroundColor: 'rgba(217, 195, 169, 0.46)',
-    zIndex: 2,
-  },
-  glassHighlight: {
-    position: 'absolute',
-    top: 15,
-    left: 10,
-    width: 5,
-    height: 30,
-    borderRadius: Theme.radius.full,
-    backgroundColor: 'rgba(255, 255, 255, 0.56)',
-    zIndex: 2,
-  },
-  waterSurface: {
-    height: 30,
-    borderTopLeftRadius: 14,
-    borderTopRightRadius: 14,
-    backgroundColor: 'rgba(142, 174, 190, 0.32)',
-  },
-  glassBase: {
-    height: 6,
-    backgroundColor: 'rgba(217, 195, 169, 0.2)',
-  },
-  waterDrop: {
-    position: 'absolute',
-    right: -2,
-    bottom: 5,
-    width: 46,
-    height: 46,
-    borderRadius: Theme.radius.full,
-    backgroundColor: '#F7E0C7',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#EAD0B8',
-  },
-  dropHighlight: {
-    position: 'absolute',
-    top: 10,
-    left: 14,
-    width: 7,
-    height: 12,
-    borderRadius: Theme.radius.full,
-    backgroundColor: 'rgba(255, 255, 255, 0.45)',
+  resultImage: {
+    width: 86,
+    height: 86,
+    borderRadius: 18,
   },
   modalSecondaryButton: {
     minHeight: 42,
