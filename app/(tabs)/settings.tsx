@@ -437,7 +437,7 @@ export default function SettingsScreen() {
           </SoftPressable>
         </View>
         <Text style={styles.cardDescription}>
-          根据体重和活动量，一般建议每天饮水 1.5-2.5 升
+          根据个人体重和活动量估算目标
         </Text>
         <View style={styles.chipGroup}>
           {dailyGoalOptions.map((goal) => (
