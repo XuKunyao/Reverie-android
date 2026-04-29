@@ -74,7 +74,7 @@ const ACTIVITY_LEVELS: {
   },
   {
     value: 'light',
-    title: '较少运动',
+    title: '轻度活动',
     subtitle: '偶尔运动',
     icon: 'wind',
     extraMl: 200,
@@ -197,14 +197,16 @@ function ActivityCard({
         >
           {option.title}
         </Text>
-        <Text
-          style={[
-            styles.activitySubtitle,
-            selected && styles.activitySubtitleSelected,
-          ]}
-        >
-          {option.subtitle}
-        </Text>
+        {selected && (
+          <Text
+            style={[
+              styles.activitySubtitle,
+              styles.activitySubtitleSelected,
+            ]}
+          >
+            {option.subtitle}
+          </Text>
+        )}
       </View>
     </Pressable>
   );
@@ -238,14 +240,16 @@ function SmallOptionCard({
       >
         {title}
       </Text>
-      <Text
-        style={[
-          styles.smallOptionSubtitle,
-          selected && styles.smallOptionSubtitleSelected,
-        ]}
-      >
-        {subtitle}
-      </Text>
+      {selected && (
+        <Text
+          style={[
+            styles.smallOptionSubtitle,
+            styles.smallOptionSubtitleSelected,
+          ]}
+        >
+          {subtitle}
+        </Text>
+      )}
     </Pressable>
   );
 }
@@ -282,6 +286,8 @@ export default function SettingsScreen() {
   const [activityLevel, setActivityLevel] = React.useState<ActivityLevel>('sedentary');
   const [sexProfile, setSexProfile] = React.useState<SexProfile>('unspecified');
   const [dietProfile, setDietProfile] = React.useState<DietProfile>('balanced');
+  const [showWeightHint, setShowWeightHint] = React.useState(false);
+  const [showSexHint, setShowSexHint] = React.useState(false);
 
   React.useEffect(() => {
     setCustomCupSize(String(settings.cupSize));
@@ -545,7 +551,12 @@ export default function SettingsScreen() {
                   <View style={styles.weightInputShell}>
                     <TextInput
                       value={weightKg}
-                      onChangeText={(value) => setWeightKg(sanitizeDecimal(value))}
+                      onChangeText={(value) => {
+                        setShowWeightHint(true);
+                        setWeightKg(sanitizeDecimal(value));
+                      }}
+                      onFocus={() => setShowWeightHint(true)}
+                      onBlur={() => setShowWeightHint(false)}
                       keyboardType="decimal-pad"
                       placeholder="60"
                       placeholderTextColor={Theme.colors.textSecondary}
@@ -554,7 +565,9 @@ export default function SettingsScreen() {
                     <Text style={styles.weightUnit}>kg</Text>
                   </View>
                 </View>
-                <Text style={styles.fieldHint}>建议输入实际体重，计算更准确</Text>
+                {showWeightHint && (
+                  <Text style={styles.fieldHint}>建议输入实际体重，计算更准确</Text>
+                )}
 
                 <View style={styles.profileDivider} />
 
@@ -568,13 +581,18 @@ export default function SettingsScreen() {
                       key={option.value}
                       label={option.label}
                       selected={sexProfile === option.value}
-                      onPress={() => setSexProfile(option.value)}
+                      onPress={() => {
+                        setShowSexHint(true);
+                        setSexProfile(option.value);
+                      }}
                     />
                   ))}
                 </View>
-                <Text style={styles.fieldHint}>
-                  以温和气候、低活动水平下的成年人喝水建议为参考
-                </Text>
+                {showSexHint && (
+                  <Text style={styles.fieldHint}>
+                    以温和气候、低活动水平下的成年人喝水建议为参考
+                  </Text>
+                )}
 
                 <View style={styles.profileDivider} />
 
