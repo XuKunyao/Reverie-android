@@ -289,12 +289,6 @@ export default function SettingsScreen() {
   const [activityLevel, setActivityLevel] = React.useState<ActivityLevel>('sedentary');
   const [sexProfile, setSexProfile] = React.useState<SexProfile>('unspecified');
   const [dietProfile, setDietProfile] = React.useState<DietProfile>('balanced');
-  const [showWeightHint, setShowWeightHint] = React.useState(false);
-  const [showSexHint, setShowSexHint] = React.useState(false);
-
-  React.useEffect(() => {
-    setCustomCupSize(String(settings.cupSize));
-  }, [settings.cupSize]);
 
   const parsedCustomCupSize = Number.parseInt(customCupSize, 10);
   const isCustomCupSizeValid =
@@ -557,11 +551,7 @@ export default function SettingsScreen() {
                   <View style={styles.weightInputShell}>
                     <TextInput
                       value={weightKg}
-                      onChangeText={(value) => {
-                        setShowWeightHint(true);
-                        setWeightKg(sanitizeDecimal(value));
-                      }}
-                      onFocus={() => setShowWeightHint(true)}
+                      onChangeText={(value) => setWeightKg(sanitizeDecimal(value))}
                       keyboardType="decimal-pad"
                       placeholder="60"
                       placeholderTextColor={Theme.colors.textSecondary}
@@ -570,9 +560,7 @@ export default function SettingsScreen() {
                     <Text style={styles.weightUnit}>kg</Text>
                   </View>
                 </View>
-                {showWeightHint && (
-                  <Text style={styles.fieldHint}>建议输入实际体重，计算更准确</Text>
-                )}
+                <Text style={styles.fieldHint}>建议输入实际体重，计算更准确</Text>
 
                 <View style={styles.profileDivider} />
 
@@ -586,18 +574,13 @@ export default function SettingsScreen() {
                       key={option.value}
                       label={option.label}
                       selected={sexProfile === option.value}
-                      onPress={() => {
-                        setShowSexHint(true);
-                        setSexProfile(option.value);
-                      }}
+                      onPress={() => setSexProfile(option.value)}
                     />
                   ))}
                 </View>
-                {showSexHint && (
-                  <Text style={styles.fieldHint}>
-                    以温和气候、低活动水平下的成年人喝水建议为参考
-                  </Text>
-                )}
+                <Text style={styles.fieldHint}>
+                  以温和气候、低活动水平下的成年人喝水建议为参考
+                </Text>
 
                 <View style={styles.profileDivider} />
 
