@@ -31,6 +31,10 @@ import Animated, {
   FadeIn,
   FadeInDown,
   FadeOut,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
   ZoomOut,
 } from 'react-native-reanimated';
 import { Theme } from '@/constants/theme';
@@ -53,10 +57,61 @@ const INTERVALS = [
 const DAILY_GOALS = [1000, 1500, 2000, 2500, 3000, 3500, 4000];
 const BASE_WEIGHT_SLOPE = 14;
 const WATER_GLASS_IMAGE = require('../../assets/images/water-glass.png');
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'high';
 type SexProfile = 'unspecified' | 'female' | 'male';
 type DietProfile = 'hydrating' | 'balanced' | 'salty';
+
+type PressableStyle = React.ComponentProps<typeof Pressable>['style'];
+type BouncyPressableProps = Omit<React.ComponentProps<typeof Pressable>, 'style'> & {
+  scaleTo?: number;
+  style?: PressableStyle;
+};
+
+function BouncyPressable({
+  children,
+  disabled,
+  onPressIn,
+  onPressOut,
+  scaleTo = 0.96,
+  style,
+  ...props
+}: BouncyPressableProps) {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <AnimatedPressable
+      {...props}
+      disabled={disabled}
+      onPressIn={(event) => {
+        if (!disabled) {
+          scale.value = withTiming(scaleTo, { duration: 90 });
+        }
+        onPressIn?.(event);
+      }}
+      onPressOut={(event) => {
+        if (!disabled) {
+          scale.value = withSpring(1, {
+            damping: 10,
+            stiffness: 280,
+            mass: 0.45,
+          });
+        }
+        onPressOut?.(event);
+      }}
+      style={(state) => [
+        typeof style === 'function' ? style(state) : style,
+        animatedStyle,
+      ]}
+    >
+      {children}
+    </AnimatedPressable>
+  );
+}
 
 const ACTIVITY_LEVELS: {
   value: ActivityLevel;
@@ -146,7 +201,7 @@ function Chip({
   onPress: () => void;
 }) {
   return (
-    <Pressable
+    <BouncyPressable
       onPress={onPress}
       style={[
         chipStyles.chip,
@@ -161,7 +216,7 @@ function Chip({
       >
         {label}
       </Text>
-    </Pressable>
+    </BouncyPressable>
   );
 }
 
@@ -175,7 +230,7 @@ function ActivityCard({
   onPress: () => void;
 }) {
   return (
-    <Pressable
+    <BouncyPressable
       onPress={onPress}
       style={({ pressed }) => [
         styles.activityCard,
@@ -208,7 +263,7 @@ function ActivityCard({
           </Text>
         )}
       </View>
-    </Pressable>
+    </BouncyPressable>
   );
 }
 
@@ -224,7 +279,7 @@ function SmallOptionCard({
   onPress: () => void;
 }) {
   return (
-    <Pressable
+    <BouncyPressable
       onPress={onPress}
       style={({ pressed }) => [
         styles.smallOptionCard,
@@ -250,7 +305,7 @@ function SmallOptionCard({
           {subtitle}
         </Text>
       )}
-    </Pressable>
+    </BouncyPressable>
   );
 }
 
@@ -367,8 +422,8 @@ export default function SettingsScreen() {
       {/* 每日饮水目标 */}
       <View style={styles.card}>
         <View style={styles.settingHeader}>
-          <Text style={[styles.cardTitle, styles.headerCardTitle]}>建议喝水目标</Text>
-          <Pressable
+          <Text style={[styles.cardTitle, styles.headerCardTitle]}>每日饮水目标</Text>
+          <BouncyPressable
             onPress={() => setIsGoalModalVisible(true)}
             style={({ pressed }) => [
               styles.estimatePill,
@@ -377,10 +432,10 @@ export default function SettingsScreen() {
           >
             <Text style={styles.estimatePillText}>自定义目标</Text>
             <Feather name="chevron-right" size={13} color={Theme.colors.primary} />
-          </Pressable>
+          </BouncyPressable>
         </View>
         <Text style={styles.cardDescription}>
-          以《中国居民膳食指南》的每日喝水量为基础，再按个人情况调整
+          根据体重和活动量，一般建议每天饮水 1.5-2.5 升
         </Text>
         <View style={styles.chipGroup}>
           {dailyGoalOptions.map((goal) => (
@@ -426,7 +481,7 @@ export default function SettingsScreen() {
               />
               <Text style={styles.inputUnit}>ml</Text>
             </View>
-            <Pressable
+            <BouncyPressable
               onPress={saveCustomCupSize}
               disabled={!isCustomCupSizeValid}
               style={({ pressed }) => [
@@ -443,7 +498,7 @@ export default function SettingsScreen() {
               >
                 应用
               </Text>
-            </Pressable>
+            </BouncyPressable>
           </View>
         </View>
       </View>
@@ -523,7 +578,7 @@ export default function SettingsScreen() {
                   估算适合今天记录和提醒的喝水量
                 </Text>
               </View>
-              <Pressable
+              <BouncyPressable
                 onPress={() => setIsGoalModalVisible(false)}
                 accessibilityRole="button"
                 accessibilityLabel="关闭"
@@ -533,7 +588,7 @@ export default function SettingsScreen() {
                 ]}
               >
                 <Feather name="x" size={21} color={Theme.colors.textSecondary} />
-              </Pressable>
+              </BouncyPressable>
             </View>
 
             <ScrollView
@@ -556,7 +611,6 @@ export default function SettingsScreen() {
                         setWeightKg(sanitizeDecimal(value));
                       }}
                       onFocus={() => setShowWeightHint(true)}
-                      onBlur={() => setShowWeightHint(false)}
                       keyboardType="decimal-pad"
                       placeholder="60"
                       placeholderTextColor={Theme.colors.textSecondary}
@@ -653,7 +707,7 @@ export default function SettingsScreen() {
                   </View>
                 </View>
 
-                <Pressable
+                <BouncyPressable
                   onPress={calculateDailyGoal}
                   disabled={!isWeightValid}
                   style={({ pressed }) => [
@@ -670,8 +724,8 @@ export default function SettingsScreen() {
                   >
                     应用这个目标
                   </Text>
-                </Pressable>
-                <Pressable
+                </BouncyPressable>
+                <BouncyPressable
                   onPress={() => setIsGoalModalVisible(false)}
                   style={({ pressed }) => [
                     styles.modalSecondaryButton,
@@ -679,7 +733,7 @@ export default function SettingsScreen() {
                   ]}
                 >
                   <Text style={styles.modalSecondaryText}>取消</Text>
-                </Pressable>
+                </BouncyPressable>
               </View>
             </ScrollView>
           </Animated.View>
