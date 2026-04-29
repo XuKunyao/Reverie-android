@@ -352,6 +352,11 @@ export default function SettingsScreen() {
     }
   };
 
+  const selectPresetCupSize = (size: number) => {
+    updateSettings({ cupSize: size });
+    setCustomCupSize('');
+  };
+
   return (
     <ScrollView
       style={[styles.container, { paddingTop: insets.top }]}
@@ -404,7 +409,7 @@ export default function SettingsScreen() {
               key={size}
               label={`${size} ml`}
               selected={settings.cupSize === size}
-              onPress={() => updateSettings({ cupSize: size })}
+              onPress={() => selectPresetCupSize(size)}
             />
           ))}
         </View>
