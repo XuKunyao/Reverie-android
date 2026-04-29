@@ -29,6 +29,10 @@ import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   Easing,
+  FadeIn,
+  FadeInDown,
+  FadeOut,
+  FadeOutDown,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -53,7 +57,6 @@ const INTERVALS = [
 /** 可选的每日目标 */
 const DAILY_GOALS = [1000, 1500, 2000, 2500, 3000, 3500, 4000];
 const BASE_WEIGHT_SLOPE = 14;
-const GOAL_MODAL_CLOSE_DELAY = 240;
 const WATER_GLASS_IMAGE = require('../../assets/images/water-glass-soft.png');
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -337,52 +340,10 @@ export default function SettingsScreen() {
   const { settings } = state;
   const [customCupSize, setCustomCupSize] = React.useState(String(settings.cupSize));
   const [isGoalModalVisible, setIsGoalModalVisible] = React.useState(false);
-  const [isGoalModalMounted, setIsGoalModalMounted] = React.useState(false);
   const [weightKg, setWeightKg] = React.useState('60');
   const [activityLevel, setActivityLevel] = React.useState<ActivityLevel>('sedentary');
   const [sexProfile, setSexProfile] = React.useState<SexProfile>('unspecified');
   const [dietProfile, setDietProfile] = React.useState<DietProfile>('balanced');
-  const modalProgress = useSharedValue(0);
-
-  React.useEffect(() => {
-    let closeTimer: ReturnType<typeof setTimeout> | undefined;
-
-    if (isGoalModalVisible) {
-      setIsGoalModalMounted(true);
-      modalProgress.value = 0;
-      requestAnimationFrame(() => {
-        modalProgress.value = withTiming(1, {
-          duration: 360,
-          easing: Easing.out(Easing.cubic),
-        });
-      });
-    } else {
-      modalProgress.value = withTiming(0, {
-        duration: 220,
-        easing: Easing.in(Easing.cubic),
-      });
-      closeTimer = setTimeout(() => {
-        setIsGoalModalMounted(false);
-      }, GOAL_MODAL_CLOSE_DELAY);
-    }
-
-    return () => {
-      if (closeTimer) {
-        clearTimeout(closeTimer);
-      }
-    };
-  }, [isGoalModalVisible, modalProgress]);
-
-  const modalBackdropStyle = useAnimatedStyle(() => ({
-    opacity: modalProgress.value,
-  }));
-  const modalCardMotionStyle = useAnimatedStyle(() => ({
-    opacity: modalProgress.value,
-    transform: [
-      { translateY: (1 - modalProgress.value) * 18 },
-      { scale: 0.985 + modalProgress.value * 0.015 },
-    ],
-  }));
 
   const parsedCustomCupSize = Number.parseInt(customCupSize, 10);
   const isCustomCupSizeValid =
@@ -446,14 +407,6 @@ export default function SettingsScreen() {
     }
   };
 
-  const openGoalModal = () => {
-    setIsGoalModalVisible(true);
-  };
-
-  const closeGoalModal = () => {
-    setIsGoalModalVisible(false);
-  };
-
   const selectPresetCupSize = (size: number) => {
     updateSettings({ cupSize: size });
     setCustomCupSize('');
@@ -473,7 +426,7 @@ export default function SettingsScreen() {
         <View style={styles.settingHeader}>
           <Text style={[styles.cardTitle, styles.headerCardTitle]}>每日饮水目标</Text>
           <SoftPressable
-            onPress={openGoalModal}
+            onPress={() => setIsGoalModalVisible(true)}
             style={({ pressed }) => [
               styles.estimatePill,
               pressed && styles.estimateButtonPressed,
@@ -593,29 +546,32 @@ export default function SettingsScreen() {
       <View style={{ height: 32 }} />
 
       <Modal
-        visible={isGoalModalMounted}
+        visible={isGoalModalVisible}
         transparent
         animationType="none"
         hardwareAccelerated
         statusBarTranslucent
-        onRequestClose={closeGoalModal}
+        onRequestClose={() => setIsGoalModalVisible(false)}
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.modalRoot}
         >
           <Animated.View
-            style={[styles.modalBackdrop, modalBackdropStyle]}
+            entering={FadeIn.duration(360)}
+            exiting={FadeOut.duration(260)}
+            style={styles.modalBackdrop}
           >
             <Pressable
               style={StyleSheet.absoluteFill}
-              onPress={closeGoalModal}
+              onPress={() => setIsGoalModalVisible(false)}
             />
           </Animated.View>
           <Animated.View
+            entering={FadeInDown.duration(430).easing(Easing.out(Easing.cubic))}
+            exiting={FadeOutDown.duration(220).easing(Easing.in(Easing.cubic))}
             style={[
               styles.modalCard,
-              modalCardMotionStyle,
               { marginTop: Math.max(insets.top + 20, 36) },
             ]}
           >
@@ -627,7 +583,7 @@ export default function SettingsScreen() {
                 </Text>
               </View>
               <SoftPressable
-                onPress={closeGoalModal}
+                onPress={() => setIsGoalModalVisible(false)}
                 accessibilityRole="button"
                 accessibilityLabel="关闭"
                 style={({ pressed }) => [
@@ -763,7 +719,7 @@ export default function SettingsScreen() {
                   </Text>
                 </SoftPressable>
                 <SoftPressable
-                  onPress={closeGoalModal}
+                  onPress={() => setIsGoalModalVisible(false)}
                   style={({ pressed }) => [
                     styles.modalSecondaryButton,
                     pressed && styles.modalSecondaryButtonPressed,
