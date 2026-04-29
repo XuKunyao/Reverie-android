@@ -351,9 +351,10 @@ export default function SettingsScreen() {
       setIsGoalModalMounted(true);
       modalProgress.value = 0;
       requestAnimationFrame(() => {
-        modalProgress.value = withTiming(1, {
-          duration: 360,
-          easing: Easing.out(Easing.cubic),
+        modalProgress.value = withSpring(1, {
+          damping: 16,
+          stiffness: 120,
+          mass: 0.72,
         });
       });
     } else {
@@ -373,16 +374,25 @@ export default function SettingsScreen() {
     };
   }, [isGoalModalVisible, modalProgress]);
 
-  const modalBackdropStyle = useAnimatedStyle(() => ({
-    opacity: modalProgress.value,
-  }));
-  const modalCardMotionStyle = useAnimatedStyle(() => ({
-    opacity: modalProgress.value,
-    transform: [
-      { translateY: (1 - modalProgress.value) * 18 },
-      { scale: 0.985 + modalProgress.value * 0.015 },
-    ],
-  }));
+  const modalBackdropStyle = useAnimatedStyle(() => {
+    const progress = Math.min(Math.max(modalProgress.value, 0), 1);
+
+    return {
+      opacity: progress,
+    };
+  });
+  const modalCardMotionStyle = useAnimatedStyle(() => {
+    const progress = modalProgress.value;
+    const visibleProgress = Math.min(Math.max(progress, 0), 1);
+
+    return {
+      opacity: visibleProgress,
+      transform: [
+        { translateY: (1 - progress) * 92 },
+        { scale: 0.97 + progress * 0.03 },
+      ],
+    };
+  });
 
   const parsedCustomCupSize = Number.parseInt(customCupSize, 10);
   const isCustomCupSizeValid =
@@ -484,7 +494,7 @@ export default function SettingsScreen() {
           </SoftPressable>
         </View>
         <Text style={styles.cardDescription}>
-          根据体重和活动量，一般建议每天饮水 1.5-2.5 升
+          按个人情况估算目标
         </Text>
         <View style={styles.chipGroup}>
           {dailyGoalOptions.map((goal) => (
