@@ -20,7 +20,6 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -34,22 +33,6 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { state, addWater, deleteLog } = useWater();
   const { todayLogs, todayTotal, settings, isLoaded } = state;
-
-  /** 处理删除记录 — 先弹确认框 */
-  const handleDelete = (id: string) => {
-    Alert.alert(
-      '删除记录',
-      '确定要删除这条饮水记录吗？',
-      [
-        { text: '取消', style: 'cancel' },
-        {
-          text: '删除',
-          style: 'destructive',
-          onPress: () => deleteLog(id),
-        },
-      ]
-    );
-  };
 
   // 数据加载中时显示空白（启动屏仍然可见）
   if (!isLoaded) {
@@ -99,7 +82,7 @@ export default function HomeScreen() {
                 key={log.id}
                 amount={log.amount}
                 timestamp={log.timestamp}
-                onDelete={() => handleDelete(log.id)}
+                onDelete={() => deleteLog(log.id)}
               />
             ))}
           </View>

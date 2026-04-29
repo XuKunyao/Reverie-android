@@ -16,6 +16,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts, DMSans_400Regular, DMSans_500Medium } from '@expo-google-fonts/dm-sans';
 import { useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
 import { WaterProvider } from '@/contexts/WaterContext';
@@ -65,16 +66,18 @@ export default function RootLayout() {
   }
 
   return (
-    <WaterProvider>
-      <Stack
-        screenOptions={{
-          contentStyle: { backgroundColor: Theme.colors.background },
-        }}
-      >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      </Stack>
-      {/* dark-content: 浅色背景配深色状态栏图标 */}
-      <StatusBar style="dark" />
-    </WaterProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <WaterProvider>
+        <Stack
+          screenOptions={{
+            contentStyle: { backgroundColor: Theme.colors.background },
+          }}
+        >
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        </Stack>
+        {/* dark-content: 浅色背景配深色状态栏图标 */}
+        <StatusBar style="dark" />
+      </WaterProvider>
+    </GestureHandlerRootView>
   );
 }

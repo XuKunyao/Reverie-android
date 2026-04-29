@@ -4,13 +4,14 @@
  * 设计思路：
  * - 极简的单行布局：左侧饮水量，右侧时间
  * - 底部用极淡的分割线分隔
- * - 长按可删除（通过 onDelete 回调）
+ * - 向左滑动露出右侧删除按钮
  * - 整体风格安静、不抢眼
  */
 
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { Theme } from '@/constants/theme';
 
 interface WaterLogItemProps {
@@ -28,28 +29,54 @@ function formatTime(timestamp: number): string {
 }
 
 export function WaterLogItem({ amount, timestamp, onDelete }: WaterLogItemProps) {
+  const renderRightActions = () => (
+    <View style={styles.deleteActionWrap}>
+      <Pressable
+        onPress={onDelete}
+        style={({ pressed }) => [
+          styles.deleteAction,
+          pressed && styles.deleteActionPressed,
+        ]}
+      >
+        <Feather name="trash-2" size={17} color={Theme.colors.surface} />
+        <Text style={styles.deleteText}>删除</Text>
+      </Pressable>
+    </View>
+  );
+
   return (
-    <Pressable
-      onLongPress={onDelete}
-      style={({ pressed }) => [
-        styles.container,
-        pressed && styles.pressed,
-      ]}
+    <ReanimatedSwipeable
+      friction={1.8}
+      rightThreshold={42}
+      overshootRight={false}
+      renderRightActions={renderRightActions}
+      containerStyle={styles.swipeContainer}
     >
-      <View style={styles.left}>
-        <Feather name="droplet" size={16} color={Theme.colors.primary} />
-        <Text style={styles.amount}>{amount} ml</Text>
-      </View>
-      <Text style={styles.time}>{formatTime(timestamp)}</Text>
-    </Pressable>
+      <Pressable
+        style={({ pressed }) => [
+          styles.container,
+          pressed && styles.pressed,
+        ]}
+      >
+        <View style={styles.left}>
+          <Feather name="droplet" size={16} color={Theme.colors.primary} />
+          <Text style={styles.amount}>{amount} ml</Text>
+        </View>
+        <Text style={styles.time}>{formatTime(timestamp)}</Text>
+      </Pressable>
+    </ReanimatedSwipeable>
   );
 }
 
 const styles = StyleSheet.create({
+  swipeContainer: {
+    backgroundColor: '#F7E7DD',
+  },
   container: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    backgroundColor: Theme.colors.surface,
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -72,5 +99,28 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: Theme.fonts.regular,
     color: Theme.colors.textSecondary,
+  },
+  deleteActionWrap: {
+    width: 82,
+    backgroundColor: '#F7E7DD',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Theme.colors.border,
+    alignItems: 'stretch',
+    justifyContent: 'center',
+  },
+  deleteAction: {
+    flex: 1,
+    backgroundColor: Theme.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+  },
+  deleteActionPressed: {
+    backgroundColor: Theme.colors.primaryPressed,
+  },
+  deleteText: {
+    color: Theme.colors.surface,
+    fontFamily: Theme.fonts.medium,
+    fontSize: 12,
   },
 });
