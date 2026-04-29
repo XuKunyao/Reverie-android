@@ -73,7 +73,7 @@ function SoftPressable({
   disabled,
   onPressIn,
   onPressOut,
-  scaleTo = 0.985,
+  scaleTo = 0.98,
   style,
   ...props
 }: SoftPressableProps) {
@@ -93,7 +93,7 @@ function SoftPressable({
       onPressIn={(event) => {
         setPressed(true);
         if (!disabled) {
-          scale.value = withTiming(scaleTo, { duration: 110 });
+          scale.value = withTiming(scaleTo, { duration: 160 });
         }
         onPressIn?.(event);
       }}
@@ -101,9 +101,9 @@ function SoftPressable({
         setPressed(false);
         if (!disabled) {
           scale.value = withSpring(1, {
-            damping: 13,
-            stiffness: 260,
-            mass: 0.42,
+            damping: 16,
+            stiffness: 170,
+            mass: 0.55,
           });
         }
         onPressOut?.(event);
