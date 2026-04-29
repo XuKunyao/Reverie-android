@@ -13,12 +13,14 @@
  */
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import { AppState } from 'react-native';
 import {
   WaterLog,
   WaterSettings,
   DEFAULT_SETTINGS,
-  saveTodayLogs,
-  loadTodayLogs,
+  getTodayKey,
+  saveLogsForDate,
+  loadLogsForDate,
   saveSettings,
   loadSettings,
 } from '@/utils/storage';
@@ -29,13 +31,15 @@ interface WaterState {
   settings: WaterSettings;
   todayLogs: WaterLog[];
   todayTotal: number;
+  dateKey: string;
   isLoaded: boolean;    // 数据是否已从存储加载完成
 }
 
 /** 所有可能的 Action 类型 */
 type WaterAction =
-  | { type: 'LOAD_DATA'; settings: WaterSettings; logs: WaterLog[] }
-  | { type: 'ADD_WATER'; amount: number }
+  | { type: 'LOAD_DATA'; settings: WaterSettings; logs: WaterLog[]; dateKey: string }
+  | { type: 'LOAD_TODAY_LOGS'; logs: WaterLog[]; dateKey: string }
+  | { type: 'ADD_WATER'; amount: number; dateKey: string }
   | { type: 'DELETE_LOG'; id: string }
   | { type: 'UPDATE_SETTINGS'; settings: Partial<WaterSettings> };
 
@@ -54,6 +58,7 @@ const initialState: WaterState = {
   settings: DEFAULT_SETTINGS,
   todayLogs: [],
   todayTotal: 0,
+  dateKey: getTodayKey(),
   isLoaded: false,
 };
 
@@ -69,6 +74,16 @@ function waterReducer(state: WaterState, action: WaterAction): WaterState {
         settings: action.settings,
         todayLogs: action.logs,
         todayTotal: calcTotal(action.logs),
+        dateKey: action.dateKey,
+        isLoaded: true,
+      };
+    }
+    case 'LOAD_TODAY_LOGS': {
+      return {
+        ...state,
+        todayLogs: action.logs,
+        todayTotal: calcTotal(action.logs),
+        dateKey: action.dateKey,
         isLoaded: true,
       };
     }
@@ -78,11 +93,13 @@ function waterReducer(state: WaterState, action: WaterAction): WaterState {
         amount: action.amount,
         timestamp: Date.now(),
       };
-      const newLogs = [newLog, ...state.todayLogs]; // 新记录放最前面
+      const logs = action.dateKey === state.dateKey ? state.todayLogs : [];
+      const newLogs = [newLog, ...logs]; // 新记录放最前面
       return {
         ...state,
         todayLogs: newLogs,
         todayTotal: calcTotal(newLogs),
+        dateKey: action.dateKey,
       };
     }
     case 'DELETE_LOG': {
@@ -125,14 +142,21 @@ const WaterContext = createContext<WaterContextType | undefined>(undefined);
 export function WaterProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(waterReducer, initialState);
 
+  const refreshTodayLogs = React.useCallback(async () => {
+    const dateKey = getTodayKey();
+    const logs = await loadLogsForDate(dateKey);
+    dispatch({ type: 'LOAD_TODAY_LOGS', dateKey, logs });
+  }, []);
+
   // App 启动时加载数据
   useEffect(() => {
     async function loadData() {
+      const dateKey = getTodayKey();
       const [settings, logs] = await Promise.all([
         loadSettings(),
-        loadTodayLogs(),
+        loadLogsForDate(dateKey),
       ]);
-      dispatch({ type: 'LOAD_DATA', settings, logs });
+      dispatch({ type: 'LOAD_DATA', settings, logs, dateKey });
     }
     loadData();
   }, []);
@@ -140,9 +164,34 @@ export function WaterProvider({ children }: { children: ReactNode }) {
   // 饮水记录变化时，自动保存到本地存储
   useEffect(() => {
     if (state.isLoaded) {
-      saveTodayLogs(state.todayLogs);
+      saveLogsForDate(state.dateKey, state.todayLogs);
     }
-  }, [state.todayLogs, state.isLoaded]);
+  }, [state.todayLogs, state.dateKey, state.isLoaded]);
+
+  // 跨过本地 0 点后自动切换到新一天的数据
+  useEffect(() => {
+    if (!state.isLoaded) {
+      return;
+    }
+
+    const syncTodayIfNeeded = () => {
+      if (getTodayKey() !== state.dateKey) {
+        refreshTodayLogs();
+      }
+    };
+
+    const timer = setInterval(syncTodayIfNeeded, 60 * 1000);
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        syncTodayIfNeeded();
+      }
+    });
+
+    return () => {
+      clearInterval(timer);
+      subscription.remove();
+    };
+  }, [refreshTodayLogs, state.dateKey, state.isLoaded]);
 
   // 设置变化时，保存设置并更新提醒
   useEffect(() => {
@@ -159,7 +208,11 @@ export function WaterProvider({ children }: { children: ReactNode }) {
 
   /** 喝了一杯水 */
   const addWater = (amount?: number) => {
-    dispatch({ type: 'ADD_WATER', amount: amount ?? state.settings.cupSize });
+    dispatch({
+      type: 'ADD_WATER',
+      amount: amount ?? state.settings.cupSize,
+      dateKey: getTodayKey(),
+    });
   };
 
   /** 删除一条记录 */

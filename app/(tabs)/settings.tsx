@@ -28,6 +28,7 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
+  Easing,
   FadeIn,
   FadeInDown,
   FadeOut,
@@ -548,6 +549,8 @@ export default function SettingsScreen() {
         visible={isGoalModalVisible}
         transparent
         animationType="none"
+        hardwareAccelerated
+        statusBarTranslucent
         onRequestClose={() => setIsGoalModalVisible(false)}
       >
         <KeyboardAvoidingView
@@ -565,8 +568,8 @@ export default function SettingsScreen() {
             />
           </Animated.View>
           <Animated.View
-            entering={FadeInDown.duration(460).springify().damping(22).stiffness(105).mass(0.8)}
-            exiting={FadeOutDown.duration(240)}
+            entering={FadeInDown.duration(430).easing(Easing.out(Easing.cubic))}
+            exiting={FadeOutDown.duration(220).easing(Easing.in(Easing.cubic))}
             style={[
               styles.modalCard,
               { marginTop: Math.max(insets.top + 20, 36) },
@@ -915,14 +918,15 @@ const styles = StyleSheet.create({
     maxHeight: '88%',
     backgroundColor: Theme.colors.surface,
     borderRadius: 22,
+    overflow: 'hidden',
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 16,
-    elevation: 4,
+    elevation: 0,
     shadowColor: '#1A1612',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.12,
-    shadowRadius: 20,
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
   },
   modalHeader: {
     flexDirection: 'row',

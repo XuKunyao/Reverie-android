@@ -40,7 +40,7 @@ export const DEFAULT_SETTINGS: WaterSettings = {
  * 获取今天的日期字符串，作为存储 key 的一部分
  * 例如：'2026-04-27'
  */
-function getTodayKey(): string {
+export function getTodayKey(): string {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -48,20 +48,30 @@ function getTodayKey(): string {
   return `${year}-${month}-${day}`;
 }
 
-/** 保存今日饮水记录 */
-export async function saveTodayLogs(logs: WaterLog[]): Promise<void> {
-  const key = `water_logs_${getTodayKey()}`;
+/** 保存指定日期的饮水记录 */
+export async function saveLogsForDate(dateKey: string, logs: WaterLog[]): Promise<void> {
+  const key = `water_logs_${dateKey}`;
   await AsyncStorage.setItem(key, JSON.stringify(logs));
 }
 
-/** 加载今日饮水记录 */
-export async function loadTodayLogs(): Promise<WaterLog[]> {
-  const key = `water_logs_${getTodayKey()}`;
+/** 加载指定日期的饮水记录 */
+export async function loadLogsForDate(dateKey: string): Promise<WaterLog[]> {
+  const key = `water_logs_${dateKey}`;
   const data = await AsyncStorage.getItem(key);
   if (data) {
     return JSON.parse(data) as WaterLog[];
   }
   return [];
+}
+
+/** 保存今日饮水记录 */
+export async function saveTodayLogs(logs: WaterLog[]): Promise<void> {
+  await saveLogsForDate(getTodayKey(), logs);
+}
+
+/** 加载今日饮水记录 */
+export async function loadTodayLogs(): Promise<WaterLog[]> {
+  return loadLogsForDate(getTodayKey());
 }
 
 /** 保存用户设置 */
