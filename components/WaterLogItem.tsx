@@ -42,29 +42,29 @@ function DeleteAction({
   onDelete?: () => void;
 }) {
   const actionStyle = useAnimatedStyle(() => {
-    const clampedProgress = Math.min(progress.value, 1);
+    const clampedProgress = Math.min(progress.value, 1.08);
 
     return {
       opacity: interpolate(
         clampedProgress,
-        [0, 0.35, 1],
-        [0, 0.72, 1],
+        [0, 0.35, 0.92, 1.08],
+        [0, 0.72, 1, 1],
         Extrapolation.CLAMP,
       ),
       transform: [
         {
           translateX: interpolate(
             clampedProgress,
-            [0, 1],
-            [22, 0],
+            [0, 0.86, 1.08],
+            [22, -3, 0],
             Extrapolation.CLAMP,
           ),
         },
         {
           scale: interpolate(
             clampedProgress,
-            [0, 1],
-            [0.92, 1],
+            [0, 0.82, 1.08],
+            [0.9, 1.04, 1],
             Extrapolation.CLAMP,
           ),
         },
@@ -97,9 +97,15 @@ export function WaterLogItem({ amount, timestamp, onDelete }: WaterLogItemProps)
 
   return (
     <ReanimatedSwipeable
-      friction={2.15}
-      rightThreshold={38}
-      overshootRight={false}
+      friction={2.05}
+      rightThreshold={40}
+      overshootRight
+      overshootFriction={7}
+      animationOptions={{
+        damping: 16,
+        stiffness: 135,
+        mass: 0.62,
+      }}
       renderRightActions={renderRightActions}
       containerStyle={styles.swipeContainer}
     >
